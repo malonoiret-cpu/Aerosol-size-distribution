@@ -281,7 +281,7 @@ class IonFormation3:
             main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"
             data_dic = self.dic_pos
         elif s == "neg":
-            main_title = "Negatively charged particles"
+            main_title = f"Negatively charged particles ({self.low_dia} to {self.high_dia} nm)"
             data_dic = self.dic_neg
         else:
             raise ValueError("s must be 'pos' or 'neg'")
