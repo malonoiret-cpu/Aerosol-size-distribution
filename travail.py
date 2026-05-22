@@ -20,11 +20,11 @@ def load_psd(filepath):
 	df = pd.read_parquet(filepath)
 	return df
 
-CLEAN_FILES = {'smps'				:	'Data/smps_psd_5min_clean.parquet',
-			 'nais_part_pos_file'	:	'Data/nais_pos_particles_clean.parquet',
-			 'nais_ion_neg_file'	:	'Data/nais_neg_ions_clean.parquet',
-			 'nais_ion_pos_file'	:	'Data/nais_pos_ions_clean.parquet',
-			 'met'                  :   'Data/polarstern_weather_clean.parquet'}
+CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_5min_clean.parquet',
+			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean.parquet',
+			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean.parquet',
+			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean.parquet',
+			 'met'                  :   'Data-clean/polarstern_weather_clean.parquet'}
 
 data_dic = {name : load_psd(filename) for name, filename in CLEAN_FILES.items()}
 
@@ -87,7 +87,9 @@ print("The instance containing the result has been created (res)")
 
 
 # ---- plot the results ----------------------
-res.Q_snow_plot()
+# res.Q_snow_plot()
+res.plot_members(s='pos')
+res.plot_members(s='neg')
 
 res.plot_hm(s='pos', vmini = None, vmaxi = None, cmap = "RdBu_r")
 res.plot_hm(s='neg')

@@ -1,0 +1,36 @@
+todo
+
+-> check if the diagonal terms in the K matrix have an impact on the results (set to 0 instead of 1/2 factor)
+
+-> give the results as a function of the bins
+
+-> read Wang et al. 2025
+
+
+
+19/05/2026: rewrote the class (IonFormation2) to compute correctly the alpha term correctly (considering the N_pos/neg*N_<dp_neg/pos)
+	-> doesn't seem to work well looking at the plot of Q_snow neg and pos.
+
+20/05/2026:
+	- Matt's code doesd not seem to work with updated verions of Pandas and Numpy (it gives importante values for Q_snow oscillating around 0).
+	- Fixed IonFormation2, so it shows good results for Q_snow. Now need to separate the values per bin.
+
+	- Seem to have succeded calculating the weight of each terms per bin. I got rid of the smps data (which are outside of the studied window right)?
+	- Need now to show the results with a smart figure.
+
+21/05 : 
+	- new day new issue. The coag_loss_function returns a DataFrame full of NaNs. The Reason is when summing the vectors for all background particle effect, there's 	apparently Always at least one NaN: the sum becomes NaN.
+	- Fixed the issue by ignoring the NaN (could be a problem: NaN doesn't mean no particle, but no measuring. There could be an effect but we're conidering no particle.
+	- Better fixing: the to last columns of the psd are empty. Droping them from the beginning allows to still consider the NaNs in case the is one in the other columns. 	The line for ignoring the NaNs is commented.
+	- The code now plot the Q_snow equation members showing the contribution for each bin
+
+22/05:
+	- set the git hub
+	- changed the preprocess function so it creates de Data-clean/ folder
+	- made the plot_member function to plot the contribution of each members for a range of size bin
+
+what's needed : 
+	- study the noise to try to understand why we have negative production rate
+
+	- understand the dn/dlogDp
+	- improve layout for hm_plot

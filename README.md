@@ -17,15 +17,15 @@ Analysis of the ion size distribution and formation rate during blowing snow eve
 └-- Results/				# Resulting csv (and parquet?) after calculation
 
 ## Installation
-git clone https://github.com/malonoiret-cpu/Aerosol-size-distribution.git
+> git clone https://github.com/malonoiret-cpu/Aerosol-size-distribution.git
 
-cd Aerosol-size-distribution (first two on the same line ?)
+> cd Aerosol-size-distribution
 
-python -m venv venv
+> python -m venv venv
 
-venv\Scripts\activate
+> venv\Scripts\activate
 
-pip install -r requirements.txt
+> pip install -r requirements.txt
 
 ## Usage
 - Place raw data files (see below) in the 'Data/' folder

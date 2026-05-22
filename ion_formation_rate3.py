@@ -71,9 +71,8 @@ class IonFormation3:
         ## ---- Now the terms of the equation for Q_snow can be calculated ---------------------------------------------------------------
         self.dtime = np.diff(self.nucmode_pos_ion_psd.index).astype(float) /1e9             # [s], divide by 1e9 to convert nanoseconds to seconds
         self.dtime = self.dtime[:, None]
-            ## Compute the members of the Q_snow_pos equation
-        #self.dNdp_pos_ion = np.diff(self.pos_N_ion, axis = 0)                                             # calculate the change in the nucmode_pnc over time
-        self.dNdp_pos_ion = pd.DataFrame(
+            ## Compute the members of the Q_snow_pos equation                                            
+        self.dNdp_pos_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
                 np.diff(self.pos_N_ion.values, axis=0),
                 index=self.pos_N_ion.index[:-1],
                 columns=self.pos_N_ion.columns
@@ -84,9 +83,9 @@ class IonFormation3:
         self.pos_chi_term = self.chi * self.N_particle[:-1] * self.N_pos_ion_smaller[:-1]
 
             ## Compute the members of the Q_snow_neg equation 
-        # self.dNdp_neg_ion = np.diff(self.neg_N_ion, axis = 0)                                             # calculate the change in the nucmode_pnc over time
-        self.dNdp_neg_ion = pd.DataFrame(
-                np.diff(self.neg_N_ion.values, axis=0),
+        
+        self.dNdp_neg_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
+                np.diff(self.neg_N_ion.values, axis=0), # returns numpy array, so it's needed to make a DataFrame
                 index=self.neg_N_ion.index[:-1],
                 columns=self.neg_N_ion.columns
             )
@@ -94,10 +93,30 @@ class IonFormation3:
         self.neg_growth_rate_term = 0
         self.neg_alpha_term = self.alpha * self.neg_N_ion[:-1] * self.N_pos_ion_smaller[:-1]
         self.neg_chi_term = self.chi * self.N_particle[:-1] * self.N_neg_ion_smaller[:-1]
-        ## --------------------------------------------------------------------------------------------------------------------------------
-
+        
         self.Q_snow_pos = self.Q_snow_calc(s = 'pos')
         self.Q_snow_neg = self.Q_snow_calc(s = 'neg')
+        ## -------------------------------------------------------------------------------------------------------------------------------
+
+        # store the results in dic for plots
+        self.dic_pos = {
+                r"dN/dlogdp \[$cm^{-3}$\]": self.pos_N_ion,
+                r"$Q_{\mathrm{snow}}$": self.Q_snow_pos,
+                r"$\partial N / \partial t$": self.dNdp_pos_ion / self.dtime,
+                r"Coagulation loss": self.pos_coag_loss_term,
+                r"$\alpha$ term": self.pos_alpha_term,
+                r"$\chi$ term": self.pos_chi_term,
+            }
+        self.dic_neg = {
+                r"dN/dlogdp \[$cm^{-3}$\]": self.neg_N_ion,
+                r"$Q_{\mathrm{snow}}$": self.Q_snow_neg,
+                r"$\partial N / \partial t$": self.dNdp_neg_ion / self.dtime,
+                r"Coagulation loss": self.neg_coag_loss_term,
+                r"$\alpha$ term": self.neg_alpha_term,
+                r"$\chi$ term": self.neg_chi_term,
+            }
+        
+
 
     def N_smaller(self, psd):
         """Compute the number of smaller particle than a bin for each bin size (cumsum)
@@ -196,10 +215,10 @@ class IonFormation3:
             # apply upper triangle mask (j >= i only)
             Jij = np.where(triu_mask, Jij, 0.0)
 
-            # self-coagulation correction on the diagonal (i == j)                      # To ignore the Nans
+            # self-coagulation correction on the diagonal (i == j)
             Jij[diag_idx, diag_idx] /= 2.0
 
-            # Jij = np.nan_to_num(Jij, nan=0.0)                       # fix the NaN issue
+            # Jij = np.nan_to_num(Jij, nan=0.0)                       # fix the NaN issue (ignore NaNs in the sum)
             coag_loss_all_sum.append(Jij.sum(axis=1))
         return pd.DataFrame(
                 np.array(coag_loss_all_sum),
@@ -258,43 +277,29 @@ class IonFormation3:
     def plot_hm(self, s:Literal['pos','neg']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
         """Plot Q_snow and its components"""
 
-        # ---- Collecting the results ------------------------------------------
         if s == "pos":
-            main_title = "Positively charged particles"
-            data_dic = {
-                r"$\partial N / \partial t$": self.dNdp_pos_ion / self.dtime,
-                r"Coagulation loss": self.pos_coag_loss_term,
-                r"$\alpha$ term": self.pos_alpha_term,
-                r"$\chi$ term": self.pos_chi_term,
-                r"$Q_{\mathrm{snow}}$": self.Q_snow_pos,
-            }
+            main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"
+            data_dic = self.dic_pos
         elif s == "neg":
             main_title = "Negatively charged particles"
-            data_dic = {
-                r"$\partial N / \partial t$": self.dNdp_neg_ion / self.dtime,
-                r"Coagulation loss": self.neg_coag_loss_term,
-                r"$\alpha$ term": self.neg_alpha_term,
-                r"$\chi$ term": self.neg_chi_term,
-                r"$Q_{\mathrm{snow}}$": self.Q_snow_neg,
-            }
+            data_dic = self.dic_neg
         else:
             raise ValueError("s must be 'pos' or 'neg'")
-        # ----------------------------------------------------------------------
-
+        
         nplots = len(data_dic)
         fig, axes = plt.subplots(
-            nplots, 1, figsize=(12, 2.5 * nplots), sharex=True
+            nplots, 1, figsize=(15, 2.5 * nplots), sharex=True
         )
 
         if nplots == 1:
             axes = [axes]
-        
+
         for ax, (title, df) in zip(axes, data_dic.items()):
         # transpose so: y = size, x = time
             im = ax.pcolormesh(
                 df.index,
                 df.columns,
-                df.T,
+                df.T,           # transpose DataFrame to have time on the x-axis
                 shading="auto",
                 cmap=cmap,
                 vmin= vmini,
@@ -310,7 +315,35 @@ class IonFormation3:
         fig.autofmt_xdate()
         plt.tight_layout()
 
+    def plot_members(self, s:Literal['pos','neg']='pos', bin_ranges = [[.75,5.62], [10.,31.62]]):
+        """Plot the contribution for each members of the Q_snow equation (sum of all bins)"""
 
+        if s == "pos":
+            main_title = f"Positively charged particles"
+            data_dic = self.dic_pos
+            Q_snow = self.Q_snow_pos
+        elif s == "neg":
+            main_title = "Negatively charged particles"
+            data_dic = self.dic_neg
+            Q_snow = self.Q_snow_neg
+        else:
+            raise ValueError("s must be 'pos' or 'neg'")
+        
+        fig, axs = plt.subplots(1,2, figsize = (10,6))
+        
+        for ax, (bin_low, bin_high) in zip(axs, bin_ranges):
+            ax.plot(Q_snow.loc[:,bin_low:bin_high].sum(axis=1), color = "red", label = "Q_snow")
+            for lab, df in list(data_dic.items())[2:]:
+                ax.plot(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.5, label = lab)
+
+            ax.set_xlabel("DateTime")
+            ax.set_ylabel(r"Production rate \[$cm^{-3}.s^{-1}$\]")
+            ax.legend()
+            ax.set_title(f"{bin_low} to {bin_high} nm")
+        fig.suptitle(main_title)
+        plt.grid()
+        fig.autofmt_xdate()
+        plt.tight_layout()
 
     
     
