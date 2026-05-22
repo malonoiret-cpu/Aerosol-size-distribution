@@ -51,6 +51,7 @@ met = pd.read_csv('Data/polarstern_weather.csv', index_col='date_time',				# met
 met.index = pd.to_datetime(met.index, format='%m/%d/%Y %H:%M', errors='coerce')
 met = met[met.index.notna()].apply(pd.to_numeric, errors='coerce').sort_index()
 
+os.makedirs("Data-clean", exist_ok=True)	# Create the Data-clean folder if non-existing
 # creating the new clean parquets
 for name, path in CLEAN_FILES.items():
 	psds[name].to_parquet(path)
@@ -58,5 +59,5 @@ for name, path in CLEAN_FILES.items():
 
 met.to_parquet('Data-clean/polarstern_weather_clean.parquet')
 
-data_dir = os.path.join(cwd, 'DATA-clean')
+data_dir = os.path.join(cwd, 'Data-clean')
 print(f"All files have succesfully been treated. The clean CSVs are in {data_dir}")
