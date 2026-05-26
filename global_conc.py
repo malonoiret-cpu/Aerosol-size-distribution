@@ -21,34 +21,36 @@ def wind_detect(met_df, threshold = 12):
 	dfs = dfs.loc[dfs >= threshold]
 	return dfs
 
-def all_plot(conc_df, met_df, wind_threshold = 12, T='72h'): # should do that in subplots for all size bins
+bin_ranges = [(0.75,  5.0), (5.0,  11.55), (11.55, 20.0), (20.0,  31.62)]
+
+def all_plot(conc_df, met_df, wind_threshold = 12, T='72h', bin_ranges = bin_ranges): # should do that in subplots for all size bins
 	"""Print the global concentration of particles"""
-	conc_dfs = conc_df.sum(axis = 1)
-	dfs_roll = conc_dfs.rolling(window=T, center = True).mean()
+	dfs_roll = conc_df.rolling(window=T, center = True).mean()
 	wind_ev = wind_detect(met_df=met_df, threshold= wind_threshold)     #wind events
 	wind_df = met_df['true_wind_velocity'].rolling(window = T, center = True).mean()
-	print(wind_df)
-	print(dfs_roll)
 	
-	fig, ax1 = plt.subplots()
-	# ax1.plot(conc_dfs, '.', alpha = 0.05, color = 'blue', label = "_N")
-	ax1.plot(dfs_roll, '-', color = 'blue', label = 'N')
-	ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
+	fig, axs = plt.subplots(2,2, figsize = (14,14), sharex=True, sharey=True)
 	
-	ax2 = ax1.twinx()
-	ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
-	ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
-	ax2.vlines(wind_ev.index, ymin=0, ymax=np.max(wind_df), linestyles='--', color = 'red', label = "wind event")
-	ax1.set_xlabel("DateTime")
+	for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
+		ax1.plot(dfs_roll.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'N')
+		ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
+	
+		ax2 = ax1.twinx()
+		ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
+		ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+		# ax2.vlines(wind_ev.index, ymin=0, ymax=np.max(wind_df), linestyles='--', color = 'red', label = "wind event")
 
+		ax1.set_xlabel("DateTime")
+		ax1.grid()
+		ax1.set_title(f"{lo} to {hi} nm")
+	
 	lines1, labels1 = ax1.get_legend_handles_labels()
 	lines2, labels2 = ax2.get_legend_handles_labels()
+	fig.legend(lines1 + lines2, labels1 + labels2, loc="upper center", ncol=1)
+
 	
-	fig.legend(lines1 + lines2, labels1 + labels2, loc="upper right", ncol=1)
-	plt.grid()
-	low_bin = conc_df.columns[0]
-	high_bin = conc_df.columns[-1]
-	plt.suptitle(f"Concentration and wind over time ({low_bin} to {high_bin} nm)")
+	fig.autofmt_xdate()
+	plt.tight_layout()
 	# plt.tight_layout()
 
 	# plt.vlines(wind_df.index)
