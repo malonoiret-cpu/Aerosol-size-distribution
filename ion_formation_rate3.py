@@ -7,7 +7,7 @@ import matplotlib.colors as colors
 import matplotlib.dates as mdates
 from typing import Literal
 
-class IonFormation3:
+class IonFormation:
     def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, low_dia=None, high_dia=None, \
 			  		pressure = 101.3, temperature = 298., alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183):
         # define constants

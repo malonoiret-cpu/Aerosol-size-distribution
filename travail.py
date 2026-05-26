@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from ion_formation_rate3 import IonFormation3 as ifr2
+from ion_formation_rate3 import IonFormation as ifr
 # from ion_formation_rate import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
@@ -54,7 +54,7 @@ print("\t \t Data have been prepared")
 # -------------------------------------------------------------------------------------------
 
 # create the instance with the desired settings
-res = ifr2(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia=dia_min, high_dia=dia_max)
+res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia=dia_min, high_dia=dia_max)
 print("The instance containing the result has been created (res)")
 
 

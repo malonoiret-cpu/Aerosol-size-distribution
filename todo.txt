@@ -20,7 +20,7 @@ todo
 
 21/05 : 
 	- new day new issue. The coag_loss_function returns a DataFrame full of NaNs. The Reason is when summing the vectors for all background particle effect, there's 	apparently Always at least one NaN: the sum becomes NaN.
-	- Fixed the issue by ignoring the NaN (could be a problem: NaN doesn't mean no particle, but no measuring. There could be an effect but we're conidering no particle.
+	- Fixed the issue by ignoring the NaN (could be a problem: NaN doesn't mean no particle, but no measuring. There could be an effect but we're considering no particle).
 	- Better fixing: the to last columns of the psd are empty. Droping them from the beginning allows to still consider the NaNs in case the is one in the other columns. 	The line for ignoring the NaNs is commented.
 	- The code now plot the Q_snow equation members showing the contribution for each bin
 
@@ -29,8 +29,11 @@ todo
 	- changed the preprocess function so it creates de Data-clean/ folder
 	- made the plot_member function to plot the contribution of each members for a range of size bin
 
+25/05: Made meteo.py, that "detects" the BSE (averaging the true wind speed velocity over three days and selecting when wind speed > 12m.s-1)
+
+26/05: 
+
 what's needed : 
 	- study the noise to try to understand why we have negative production rate
-
 	- understand the dn/dlogDp
 	- improve layout for hm_plot

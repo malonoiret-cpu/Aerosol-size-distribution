@@ -5,11 +5,12 @@ import numpy
 df_met = pd.read_parquet("Data-clean/polarstern_weather_clean.parquet")
 df_met = df_met.loc["2019-10-04 01:41:00":"2020-10-01 22:59:00"]
 
-dfs = df_met['true_wind_velocity'].resample('72h').mean()
+
+dfs = df_met['true_wind_velocity'].resample('24h').mean()
 
 dfs_filtered = dfs.loc[dfs >= 12]
+wind_dates = dfs.index
 
-print(dfs_filtered.to_numpy())
 
 # plt.figure()
 # plt.plot(dfs)
