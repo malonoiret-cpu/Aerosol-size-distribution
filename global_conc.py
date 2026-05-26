@@ -7,8 +7,8 @@ from ion_formation_rate3 import IonFormation as ifr
 start = '2019-12-01 00:00:00'          # time window (from 2019-06-20 14:46:06 to 2020-10-01 17:59:36) (met data start from 2019-10-04 01:41:00)
 end = '2020-03-01 00:00:00'        
 
-dia_min = .75                       # diameter window (from 0.75 to 31.62 [nm])
-dia_max = 31.62                     # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
+dia_min = .75                          # diameter window (from 0.75 to 31.62 [nm])
+dia_max = 31.62                        # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
 wind_threshold = 12                 # [m.s-1] wind threshold for BSE definition
 # ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ def wind_detect(met_df, threshold = 12):
 	dfs = dfs.loc[dfs >= threshold]
 	return dfs
 
-def all_plot(conc_df, met_df, wind_threshold = 12, T='72h'):
+def all_plot(conc_df, met_df, wind_threshold = 12, T='72h'): # should do that in subplots for all size bins
 	"""Print the global concentration of particles"""
 	conc_dfs = conc_df.sum(axis = 1)
 	dfs_roll = conc_dfs.rolling(window=T, center = True).mean()
@@ -34,11 +34,11 @@ def all_plot(conc_df, met_df, wind_threshold = 12, T='72h'):
 	# ax1.plot(conc_dfs, '.', alpha = 0.05, color = 'blue', label = "_N")
 	ax1.plot(dfs_roll, '-', color = 'blue', label = 'N')
 	ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
-	ax1.vlines(wind_ev.index, ymin=0, ymax=np.max(conc_df), linestyles='--', color = 'red', label = "wind event")
 	
 	ax2 = ax1.twinx()
 	ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
 	ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+	ax2.vlines(wind_ev.index, ymin=0, ymax=np.max(wind_df), linestyles='--', color = 'red', label = "wind event")
 	ax1.set_xlabel("DateTime")
 
 	lines1, labels1 = ax1.get_legend_handles_labels()
@@ -46,7 +46,9 @@ def all_plot(conc_df, met_df, wind_threshold = 12, T='72h'):
 	
 	fig.legend(lines1 + lines2, labels1 + labels2, loc="upper right", ncol=1)
 	plt.grid()
-	plt.suptitle("Concentration over time")
+	low_bin = conc_df.columns[0]
+	high_bin = conc_df.columns[-1]
+	plt.suptitle(f"Concentration and wind over time ({low_bin} to {high_bin} nm)")
 	# plt.tight_layout()
 
 	# plt.vlines(wind_df.index)
