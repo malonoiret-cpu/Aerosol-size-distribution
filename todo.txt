@@ -32,8 +32,22 @@ todo
 25/05: Made meteo.py, that "detects" the BSE (averaging the true wind speed velocity over three days and selecting when wind speed > 12m.s-1)
 
 26/05: 
+	- Made global_conc.py, to study the concentration and wind over the time, for different range of size bins.
+	- meteo.py now slice the psd when the positive ion concentration is above 2000 cm-3. I guess it's not the best.
+	- I manually stored the npf events in a list in meteo.py
 
 what's needed : 
 	- study the noise to try to understand why we have negative production rate
 	- understand the dn/dlogDp
 	- improve layout for hm_plot
+	- calculate the growth rate:
+		The growth rate can not be calculated for the whole time period, it need to be calculated for each BSE. For the GR to be valid, the particle size needs to grow monotically.
+
+
+
+		Slicing the time series only for BSE events?
+			- should we do it in the IonFormation class? No, but add an argument to tell if the class is called during a BSE (so we can add the GR)
+			- how to define it? Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the data for that
+			- since there's not so many events, the easiest is probably to set them manually.
+			
+			There's more!!

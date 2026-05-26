@@ -38,7 +38,7 @@ def all_plot(conc_df, met_df, wind_threshold = 12, T='72h', bin_ranges = bin_ran
 		ax2 = ax1.twinx()
 		ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
 		ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
-		# ax2.vlines(wind_ev.index, ymin=0, ymax=np.max(wind_df), linestyles='--', color = 'red', label = "wind event")
+		ax2.vlines(wind_ev.index, ymin=0, ymax=np.max(wind_df), linestyles='--', color = 'red', label = "wind event")
 
 		ax1.set_xlabel("DateTime")
 		ax1.grid()

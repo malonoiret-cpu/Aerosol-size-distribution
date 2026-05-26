@@ -100,7 +100,6 @@ class IonFormation:
 
         # store the results in dic for plots
         self.dic_pos = {
-                r"dN/dlogdp \[$cm^{-3}$\]": self.pos_N_ion,
                 r"$Q_{\mathrm{snow}}$": self.Q_snow_pos,
                 r"$\partial N / \partial t$": self.dNdp_pos_ion / self.dtime,
                 r"Coagulation loss": self.pos_coag_loss_term,
@@ -108,7 +107,6 @@ class IonFormation:
                 r"$\chi$ term": self.pos_chi_term,
             }
         self.dic_neg = {
-                r"dN/dlogdp \[$cm^{-3}$\]": self.neg_N_ion,
                 r"$Q_{\mathrm{snow}}$": self.Q_snow_neg,
                 r"$\partial N / \partial t$": self.dNdp_neg_ion / self.dtime,
                 r"Coagulation loss": self.neg_coag_loss_term,
@@ -246,6 +244,10 @@ class IonFormation:
             return Q_snow_pos
         if s == 'neg':
             return Q_snow_neg
+        
+    def calc_growth_rate(self):
+        """Calculate the growth rate"""
+        return 0
         
     def rollmean(self, df = pd.DataFrame(), T = '30min'):
         return df.rolling(window=T, center = True).mean()

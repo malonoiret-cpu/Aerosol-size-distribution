@@ -88,8 +88,8 @@ print("The instance containing the result has been created (res)")
 
 # ---- plot the results ----------------------
 # res.Q_snow_plot()
-res.plot_members(s='pos')
-res.plot_members(s='neg')
+# res.plot_members(s='pos')
+# res.plot_members(s='neg')
 
 res.plot_hm(s='pos', vmini = None, vmaxi = None, cmap = "RdBu_r")
 res.plot_hm(s='neg')
