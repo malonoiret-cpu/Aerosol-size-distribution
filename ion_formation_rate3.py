@@ -6,9 +6,10 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.dates as mdates
 from typing import Literal
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class IonFormation:
-    def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, low_dia=None, high_dia=None,   \
+    def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, met_df: pd.DataFrame, low_dia=None, high_dia=None,   \
 			  		pressure = 101.3, temperature = 298., alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183,                                 \
                     diff_order: int = 5):
         # define constants
@@ -39,6 +40,8 @@ class IonFormation:
         if not isinstance(particle_psd, pd.DataFrame):
             raise TypeError("df must be a pandas DataFrame")
         self.particle_psd = particle_psd.reindex(pos_ion_psd.index) # Re-index particle psd with pos ion psd to make sure they have the same time index for calculations
+
+        self.met_df = met_df
         ## ----------------------------------------------------------
 
         ## Diameter range considered
@@ -314,7 +317,41 @@ class IonFormation:
 	#     """Print the global concentration of particles"""
 
         
+    def plot_hm_conc(self, s:Literal['pos','neg']='pos', T = '1h', vmini = None, vmaxi = None, cmap = "RdBu_r"):
+        """Plot the heatmap of the concentrations over the time and the particle size"""
 
+        if s == "pos":
+            main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"
+            df = self.pos_N_ion
+        elif s == "neg":
+            main_title = f"Negatively charged particles ({self.low_dia} to {self.high_dia} nm)"
+            df = self.neg_N_ion
+        else:
+            raise ValueError("s must be 'pos' or 'neg'")
+        wind_df = self.met_df['true_wind_velocity'].rolling(window = T, center = True).mean()
+        
+        fig, ax1 = plt.subplots()
+        im = ax1.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
+                shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
+        ax1.set_ylabel("Diameter [nm]")
+        ax1.set_ylabel("DateTime")
+        ax1.set_title(main_title)
+        plt.colorbar(im, ax=ax1, pad=0.01)
+
+        # divider = make_axes_locatable(ax1)
+        # cax = divider.append_axes("right", size="3%", pad=0.1)
+        # cbar = fig.colorbar(im, cax=cax)
+        # cbar.set_label("Concentration")
+
+        ax2 = ax1.twinx()
+        ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
+        ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+
+
+        fig.autofmt_xdate()
+        plt.tight_layout()
+        
+        
     def plot_hm(self, s:Literal['pos','neg']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
         """Plot Q_snow and its components in an heat map"""
 

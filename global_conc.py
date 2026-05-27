@@ -79,7 +79,7 @@ def load_psd(filepath):
 	return df
 # ------------------------------------------------------------------
 
-CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_5min_clean.parquet',
+CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_clean.parquet',
 			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean.parquet',
 			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean.parquet',
 			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean.parquet',
@@ -107,7 +107,7 @@ met_10min = met.resample('10min').median()
 print("\t \t Data have been prepared")
 # -------------------------------------------------------------------------------------------
 
-res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia=dia_min, high_dia=dia_max)
+res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df=met_10min, low_dia=dia_min, high_dia=dia_max)
 
 # wind_df = wind_detect(met_10min, threshold= wind_threshold)
 

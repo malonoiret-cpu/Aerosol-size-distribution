@@ -35,10 +35,10 @@ RAW_FILES = {'smps'					:	('Data/smps_psd_5min_raw.csv', 64),
 			 'nais_ion_pos_file'	:	('Data/nais_pos_ions_raw.csv', 16)
 			 }
 
-CLEAN_FILES_raw = {'smps_10min'				:	'Data-clean/smps_psd_clean.parquet',
-			 'nais_part_pos_file_10min'	:	'Data-clean/nais_pos_particles_clean.parquet',
-			 'nais_ion_neg_file_10min'	:	'Data-clean/nais_neg_ions_clean.parquet',
-			 'nais_ion_pos_file_10min'	:	'Data-clean/nais_pos_ions_clean.parquet'
+CLEAN_FILES_raw = {'smps'				:	'Data-clean/smps_psd_clean.parquet',
+			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean.parquet',
+			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean.parquet',
+			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean.parquet'
 			 }
 
 CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_10min_clean.parquet',
@@ -67,12 +67,13 @@ os.makedirs("Data-clean", exist_ok=True)	# Create the Data-clean folder if non-e
 # creating the new clean parquets
 for name, path in CLEAN_FILES.items():
 	psds_10min = psds[name].resample(resample_time).median()
-	psds_10min_rolled = psds_10min.rolling(window = roll_period, center = True).median()
-	psds_10min_rolled.to_parquet(path)
-	print(f"{name} done")
-
+	# psds_10min_rolled = psds_10min.rolling(window = roll_period, center = True).median()
+	psds_10min.to_parquet(path)
+	print(f"{name}_10min done")
+a = 'smps_10min'
 for name, path in CLEAN_FILES_raw.items():
 	psds[name].to_parquet(path)
+	print(f"{name} done")
 
 met.to_parquet('Data-clean/polarstern_weather_clean.parquet')
 met_res = met.resample(resample_time).median()

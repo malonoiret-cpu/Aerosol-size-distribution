@@ -34,7 +34,7 @@ npf_datetime_list = [
 ]
 
 bin_ranges = [(0.75,  5.0), (5.0,  11.55), (11.55, 20.0), (20.0,  31.62)]
-roll_period = '2h'
+roll_period = '2h'      # '2h', if not None, apply a rolling median over the time given to smooth the data
 qual = 150      # Output plots quality
 # ---------------------------------------------------------------------------
 
@@ -70,13 +70,14 @@ for start, end in npf_datetime_list_text:
     nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end]#.resample('10min').median()
     met_10min = data_dic['met'].loc[start:end]#.resample('10min').median()
 
-    # nais_part_pos_10min = nais_part_pos_10min.rolling(window = roll_period, center = True).median()
-    # nais_ion_neg_10min = nais_ion_neg_10min.rolling(window = roll_period, center = True).median()
-    # nais_ion_pos_10min = nais_ion_pos_10min.rolling(window = roll_period, center = True).median()
-    # met_10min = met_10min.rolling(window = roll_period, center = True).median()
+    if roll_period != None:
+        nais_part_pos_10min = nais_part_pos_10min.rolling(window = roll_period, center = True).median()
+        nais_ion_neg_10min = nais_ion_neg_10min.rolling(window = roll_period, center = True).median()
+        nais_ion_pos_10min = nais_ion_pos_10min.rolling(window = roll_period, center = True).median()
+        # met_10min = met_10min.rolling(window = roll_period, center = True).median()
     
 
-    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia = dia_min, high_dia = dia_max, diff_order=3)
+    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df = met_10min, low_dia = dia_min, high_dia = dia_max, diff_order=5)
 
     event_name = start + 'to' + end
     res_dic[event_name] = res
@@ -102,6 +103,14 @@ for start, end in npf_datetime_list_text:
 
     res.plot_hm(s='neg')
     plt.savefig(os.path.join(event_dir, "heatmap_neg.png"), dpi=150, bbox_inches='tight')
+    plt.close()
+
+    res.plot_hm_conc(s='pos')
+    plt.savefig(os.path.join(event_dir, "conc_hm_pos.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
+
+    res.plot_hm_conc(s='neg')
+    plt.savefig(os.path.join(event_dir, "conc_hm_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
     print(f"{event_dir} done")

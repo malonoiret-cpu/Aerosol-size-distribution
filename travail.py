@@ -6,8 +6,8 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
 	# time window (from 2019-06-20 14:46:06 to 2020-10-01 17:59:36)
-start = '2019-12-03 00:01'
-end = '2019-12-06 00:00'
+start = '2019-12-02 14:00:00'
+end = '2019-12-06 04:00:00'
 
 	# diameter window (from 0.75 to 31.62 [nm])
 	# (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). I the bins are wanted, uncommenting the NaN filter line in the function is required)
@@ -21,7 +21,7 @@ def load_psd(filepath):
 	df = pd.read_parquet(filepath)
 	return df
 
-CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_5min_clean.parquet',
+CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_clean.parquet',
 			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean.parquet',
 			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean.parquet',
 			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean.parquet',
@@ -56,10 +56,10 @@ print("\t \t Data have been prepared")
 # -------------------------------------------------------------------------------------------
 
 # create the instance with the desired settings
-res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia=dia_min, high_dia=dia_max)
+res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df= met_10min, low_dia=dia_min, high_dia=dia_max)
 print("The instance containing the result has been created (res)")
 
-
+res.plot_hm_conc('pos')
 # # print csv
 # print("Number of bins : \n")
 # print("nucmode_pos_ion_psd : ", len(res.nucmode_pos_ion_psd.columns), 'bins')
@@ -93,7 +93,7 @@ print("The instance containing the result has been created (res)")
 # res.plot_members(s='pos')
 # res.plot_members(s='neg')
 
-res.plot_hm(s='pos', vmini = None, vmaxi = None, cmap = "RdBu_r")
-res.plot_hm(s='neg')
+# res.plot_hm(s='pos', vmini = None, vmaxi = None, cmap = "RdBu_r")
+# res.plot_hm(s='neg')
 plt.show()
 # -------------------------------------------

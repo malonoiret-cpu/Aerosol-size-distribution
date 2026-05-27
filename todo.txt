@@ -41,6 +41,7 @@ todo
 	- Noise treatment:	- the data are now resampled ('10min' like before) and then rolling.median with adaptable window (2h) (shall we do that in preprocess?)
 						- update on the class: possibility to do wider difference when computing dNdP/dt 
 						- No Savitzky-Golay filter yet
+	- Preprocess creates ..._10min.parquet files that are already resampled and rollmeaned (should they be rollmeaned ? no, could rollmean in the class to have more control)
 	
 
 
