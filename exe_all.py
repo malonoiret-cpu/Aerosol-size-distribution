@@ -68,20 +68,21 @@ res_dic = {}
 for start, end in npf_datetime_list_text:
 
     # Slice datasets over a blowing snow event, rollmean to get rid of the noise and resample for common index
-    nais_part_pos = data_dic['nais_part_pos_file'].loc[start:end].rolling(window = roll_period, center = True).mean()
-    nais_ion_neg = data_dic['nais_ion_neg_file'].loc[start:end].rolling(window = roll_period, center = True).median()
-    nais_ion_pos = data_dic['nais_ion_pos_file'].loc[start:end].rolling(window = roll_period, center = True).median()
-    met = data_dic['met'].loc[start:end].rolling(window = roll_period, center = True).median()
+    # nais_part_pos = data_dic['nais_part_pos_file'].loc[start:end].rolling(window = roll_period, center = True).mean()
+    # nais_ion_neg = data_dic['nais_ion_neg_file'].loc[start:end].rolling(window = roll_period, center = True).median()
+    # nais_ion_pos = data_dic['nais_ion_pos_file'].loc[start:end].rolling(window = roll_period, center = True).median()
+    # met = data_dic['met'].loc[start:end].rolling(window = roll_period, center = True).median()
 
-    nais_part_pos_10min = nais_part_pos.resample('10min').median()
-    nais_ion_neg_10min = nais_ion_neg.resample('10min').median()
-    nais_ion_pos_10min = nais_ion_pos.resample('10min').median()
-    met_10min = met.resample('10min').median()
+    nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start:end].resample('10min').median()
+    nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start:end].resample('10min').median()
+    nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end].resample('10min').median()
+    met_10min = data_dic['met'].loc[start:end].resample('10min').median()
 
-    # nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start:end].rolling(window = roll_period, center = True).median()
-    # nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start:end].resample('10min').median()
-    # nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end].resample('10min').median()
-    # met_10min = data_dic['met'].loc[start:end].resample('10min').median()
+    nais_part_pos_10min = nais_part_pos_10min.rolling(window = roll_period, center = True).median()
+    nais_ion_neg_10min = nais_ion_neg_10min.rolling(window = roll_period, center = True).median()
+    nais_ion_pos_10min = nais_ion_pos_10min.rolling(window = roll_period, center = True).median()
+    met_10min = met_10min.rolling(window = roll_period, center = True).median()
+    
 
     res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia = dia_min, high_dia = dia_max)
 
@@ -110,5 +111,7 @@ for start, end in npf_datetime_list_text:
     res.plot_hm(s='neg')
     plt.savefig(os.path.join(event_dir, "heatmap_neg.png"), dpi=150, bbox_inches='tight')
     plt.close()
+
+    print(f"{event_dir} done")
 
 # plt.show()

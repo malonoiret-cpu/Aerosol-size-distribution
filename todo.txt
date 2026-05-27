@@ -38,16 +38,26 @@ todo
 
 27/05:
 	- exe_all.py plots the results for all npf events and store them in dedicatd folders
+	- Noise treatment:	- the data are now resampled ('10min' like before) and then rolling.median with adaptable window (2h) (shall we do that in preprocess?)
+						- update on the class: possibility to do wider difference when computing dNdP/dt 
+						- No Savitzky-Golay filter yet
+	
 
 
 what's needed : 
-	- study the noise to try to understand why we have negative production rate (can I do a rollmean?)
+	- study the noise to try to understand why we have negative production rate
 	- improve layout for hm_plot
 	- calculate the growth rate:
 		The growth rate can not be calculated for the whole time period, it needs to be calculated for each BSE. For the GR to be valid, the particle size needs to grow monotically.
 	- should exe_all.py store results in csv?
-	
+	- consider met data in the class
+
 Questions: 	I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
 				-> do we have the data ?
 			To get rid of the noise, I rollmean. It doesn't work so well and is it even right?
 		
+
+Wider finite differences — instead of diff() between consecutive steps (t and t+1), use a centered difference over a wider window (t-k and t+k).
+This is essentially a built-in smoother for the derivative and avoids the need to pre-filter
+
+Savitzky-Golay filter 

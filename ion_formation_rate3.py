@@ -8,8 +8,9 @@ import matplotlib.dates as mdates
 from typing import Literal
 
 class IonFormation:
-    def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, low_dia=None, high_dia=None, \
-			  		pressure = 101.3, temperature = 298., alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183):
+    def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, low_dia=None, high_dia=None,   \
+			  		pressure = 101.3, temperature = 298., alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183,                                 \
+                    diff_order: int = 5):
         # define constants
         self.BOLTZMANN = 1.380658e-23 	# [m**2 kg/s**2 K]
         self.SUTHERLAND = 110.4			# sutherland correction [K]
@@ -71,24 +72,26 @@ class IonFormation:
         ## ---- Now the terms of the equation for Q_snow can be calculated ---------------------------------------------------------------
         self.dtime = np.diff(self.nucmode_pos_ion_psd.index).astype(float) /1e9             # [s], divide by 1e9 to convert nanoseconds to seconds
         self.dtime = self.dtime[:, None]
+
             ## Compute the members of the Q_snow_pos equation                                            
-        self.dNdp_pos_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
-                np.diff(self.pos_N_ion.values, axis=0),
-                index=self.pos_N_ion.index[:-1],
-                columns=self.pos_N_ion.columns
-            )
+        # self.dNdp_pos_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
+        #         np.diff(self.pos_N_ion.values, axis=0),
+        #         index=self.pos_N_ion.index[:-1],
+        #         columns=self.pos_N_ion.columns
+        #     )
+        self.dNdp_dt_pos_ion = self._diff(self.pos_N_ion, order=diff_order)
         self.pos_coag_loss_term = self.calc_coag_loss(ion_psd = self.pos_ion_psd)[:-1] * self.pos_N_ion[:-1]
         self.pos_growth_rate_term = 0
         self.pos_alpha_term = self.alpha * self.pos_N_ion[:-1] * self.N_neg_ion_smaller[:-1]
         self.pos_chi_term = self.chi * self.N_particle[:-1] * self.N_pos_ion_smaller[:-1]
 
             ## Compute the members of the Q_snow_neg equation 
-        
-        self.dNdp_neg_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
-                np.diff(self.neg_N_ion.values, axis=0), # returns numpy array, so it's needed to make a DataFrame
-                index=self.neg_N_ion.index[:-1],
-                columns=self.neg_N_ion.columns
-            )
+        # self.dNdp_neg_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
+        #         np.diff(self.neg_N_ion.values, axis=0), # returns numpy array, so it's needed to make a DataFrame
+        #         index=self.neg_N_ion.index[:-1],
+        #         columns=self.neg_N_ion.columns
+        #     )
+        self.dNdp_dt_neg_ion = self._diff(self.neg_N_ion, order=diff_order)
         self.neg_coag_loss_term = self.calc_coag_loss(ion_psd = self.neg_ion_psd)[:-1] * self.neg_N_ion[:-1]
         self.neg_growth_rate_term = 0
         self.neg_alpha_term = self.alpha * self.neg_N_ion[:-1] * self.N_pos_ion_smaller[:-1]
@@ -101,14 +104,14 @@ class IonFormation:
         # store the results in dic for plots
         self.dic_pos = {
                 r"$Q_{\mathrm{snow}}$": self.Q_snow_pos,
-                r"$\partial N / \partial t$": self.dNdp_pos_ion / self.dtime,
+                r"$\partial N / \partial t$": self.dNdp_dt_pos_ion,
                 r"Coagulation loss": self.pos_coag_loss_term,
                 r"$\alpha$ term": self.pos_alpha_term,
                 r"$\chi$ term": self.pos_chi_term,
             }
         self.dic_neg = {
                 r"$Q_{\mathrm{snow}}$": self.Q_snow_neg,
-                r"$\partial N / \partial t$": self.dNdp_neg_ion / self.dtime,
+                r"$\partial N / \partial t$": self.dNdp_dt_neg_ion,
                 r"Coagulation loss": self.neg_coag_loss_term,
                 r"$\alpha$ term": self.neg_alpha_term,
                 r"$\chi$ term": self.neg_chi_term,
@@ -122,6 +125,37 @@ class IonFormation:
         full_cumsum = psd.cumsum(axis = 1)
         full_cumsum_shifted = full_cumsum.shift(1, axis=1).fillna(0)    # The first bin is filled with 0s, the second with the concentration of the first bin, the third the sum of the two first...
         return full_cumsum_shifted
+    
+    def _diff(self, df: pd.DataFrame, order: int = 2):
+        """
+        Compute dN/dt using a finite difference stencil.
+        order=2 : standard 2-point forward difference (current behaviour)
+        order=3 : 3-point central difference
+        order=5 : 5-point central difference
+        Returns a DataFrame aligned on the interior time index.
+        """
+        N = df.values
+        t = df.index.astype(np.int64).to_numpy() / 1e9  # timestamps in seconds
+
+        if order == 2:
+            dN = N[1:] - N[:-1]
+            dt = np.diff(t)[:, None]
+            idx = df.index[:-1]
+
+        elif order == 3:
+            dN = N[2:] - N[:-2]
+            dt = (t[2:] - t[:-2])[:, None]
+            idx = df.index[1:-1]
+
+        elif order == 5:
+            dN = (-N[4:] + 8*N[3:-1] - 8*N[1:-3] + N[:-4])
+            dt = (12 * (t[2:-2] - t[1:-3]))[:, None]  # 12 * dt (uniform spacing assumed)
+            idx = df.index[2:-2]
+
+        else:
+            raise ValueError("order must be 2, 3, or 5")
+
+        return pd.DataFrame(dN / dt, index=idx, columns=df.columns)
 
     def mean_free_path_calc(self):
         """Compute the mean free path from the reference (at T = 296.15 [K], P = 101.3 [kPa]; MFP_REF = 6.730e-8 [m])
@@ -226,13 +260,13 @@ class IonFormation:
     
     def Q_snow_calc(self, s: Literal['all', 'pos', 'neg'] = "all"):
         """Compute Q_snow"""
-        Q_snow_pos = self.dNdp_pos_ion / self.dtime \
+        Q_snow_pos = self.dNdp_dt_pos_ion       \
                     + self.pos_coag_loss_term   \
                     + self.pos_growth_rate_term \
                     + self.pos_alpha_term       \
                     - self.pos_chi_term
         
-        Q_snow_neg = self.dNdp_neg_ion / self.dtime \
+        Q_snow_neg = self.dNdp_dt_neg_ion       \
                     + self.neg_coag_loss_term   \
                     + self.neg_growth_rate_term \
                     + self.neg_alpha_term       \
