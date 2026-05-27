@@ -275,9 +275,14 @@ class IonFormation:
         plt.legend()
         plt.grid()
         plt.tight_layout()
+    
+    # def all_plot(conc_df, met_df, T='72h', bin_ranges = bin_ranges):
+	#     """Print the global concentration of particles"""
+
+        
 
     def plot_hm(self, s:Literal['pos','neg']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
-        """Plot Q_snow and its components"""
+        """Plot Q_snow and its components in an heat map"""
 
         if s == "pos":
             main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"

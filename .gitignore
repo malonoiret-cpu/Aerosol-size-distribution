@@ -221,5 +221,6 @@ venv/
 Data/
 Data-clean/
 Results/
+Results_all/
 __pycache__/
 *.pyc
