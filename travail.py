@@ -15,6 +15,7 @@ dia_min = .75
 dia_max = 31.62
 # ---------------------------------------------------------------------------
 
+# ---- load data -------------------------------------------------------
 def load_psd(filepath):
 	"""Load the nais et smps files."""
 	df = pd.read_parquet(filepath)
@@ -29,6 +30,7 @@ CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_5min_clean.parquet',
 data_dic = {name : load_psd(filename) for name, filename in CLEAN_FILES.items()}
 
 print("The data have been loaded \n \t Preparing the data...")
+# ----------------------------------------------------------------------
 
 #%% ---- Prepare data -----------------------------------------------------------------------
 # Slice over a blowing snow event

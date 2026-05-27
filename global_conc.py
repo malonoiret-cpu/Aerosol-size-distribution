@@ -4,13 +4,33 @@ import matplotlib.pyplot as plt
 from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
-start = '2019-12-01 00:00:00'          # time window (from 2019-06-20 14:46:06 to 2020-10-01 17:59:36) (met data start from 2019-10-04 01:41:00)
+start = '2019-12-01 00:00:00'          	# time window (from 2019-06-20 14:46:06 to 2020-10-01 17:59:36) (met data start from 2019-10-04 01:41:00)
 end = '2020-03-01 00:00:00'        
 
-dia_min = .75                          # diameter window (from 0.75 to 31.62 [nm])
-dia_max = 31.62                        # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
+dia_min = .75                          	# diameter window (from 0.75 to 31.62 [nm])
+dia_max = 31.62                        	# (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-wind_threshold = 12                 # [m.s-1] wind threshold for BSE definition
+wind_threshold = 12                 	# [m.s-1] wind threshold for BSE definition ??
+
+npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qualitatively determined blowing snow events
+                     ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
+                     ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
+                     ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
+                     ['2020-01-26 06:00:00', '2020-01-27 12:00:00'],
+                     ['2020-01-29 06:00:00', '2020-01-30 18:00:00'],
+                     ['2020-01-31 00:00:00', '2020-02-02 06:00:00'],
+                     ['2020-02-02 06:00:00', '2020-02-05 00:00:00'],
+                     ['2020-02-12 00:00:00', '2020-02-14 12:00:00'],
+                     ['2020-02-18 06:00:00', '2020-02-22 18:00:00'],
+                     ['2020-02-23 00:00:00', '2020-02-28 00:00:00']
+                     ]
+
+npf_datetime_list = [
+    (pd.to_datetime(start), pd.to_datetime(end))
+    for start, end in npf_datetime_list_text
+]
+
+bin_ranges = [(0.75,  5.0), (5.0,  11.55), (11.55, 20.0), (20.0,  31.62)]
 # ---------------------------------------------------------------------------
 
 # ---- def some functions -------------------------------------------
@@ -21,9 +41,7 @@ def wind_detect(met_df, threshold = 12):
 	dfs = dfs.loc[dfs >= threshold]
 	return dfs
 
-bin_ranges = [(0.75,  5.0), (5.0,  11.55), (11.55, 20.0), (20.0,  31.62)]
-
-def all_plot(conc_df, met_df, wind_threshold = 12, T='72h', bin_ranges = bin_ranges): # should do that in subplots for all size bins
+def all_plot(conc_df, met_df, wind_threshold = 12, T='72h', bin_ranges = bin_ranges):
 	"""Print the global concentration of particles"""
 	dfs_roll = conc_df.rolling(window=T, center = True).mean()
 	wind_ev = wind_detect(met_df=met_df, threshold= wind_threshold)     #wind events
@@ -38,29 +56,28 @@ def all_plot(conc_df, met_df, wind_threshold = 12, T='72h', bin_ranges = bin_ran
 		ax2 = ax1.twinx()
 		ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
 		ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
-		ax2.vlines(wind_ev.index, ymin=0, ymax=np.max(wind_df), linestyles='--', color = 'red', label = "wind event")
+		# ax2.vlines(wind_ev.index, ymin=0, ymax=np.max(wind_df), linestyles='--', color = 'red', label = "wind event")
 
 		ax1.set_xlabel("DateTime")
 		ax1.grid()
 		ax1.set_title(f"{lo} to {hi} nm")
+
+		for (start, end), ev_nb in zip(npf_datetime_list, range(len(npf_datetime_list))):
+			ax2.axvspan(xmin = start, xmax = end, color = 'tomato', alpha = 0.2)
+			ax2.text(start, np.max(wind_df), ev_nb)
 	
 	lines1, labels1 = ax1.get_legend_handles_labels()
 	lines2, labels2 = ax2.get_legend_handles_labels()
 	fig.legend(lines1 + lines2, labels1 + labels2, loc="upper center", ncol=1)
-
 	
 	fig.autofmt_xdate()
 	plt.tight_layout()
-	# plt.tight_layout()
-
-	# plt.vlines(wind_df.index)
-
-# ------------------------------------------------------------------
 	
 def load_psd(filepath):
 	"""Load the nais et smps files."""
 	df = pd.read_parquet(filepath)
 	return df
+# ------------------------------------------------------------------
 
 CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_5min_clean.parquet',
 			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean.parquet',
