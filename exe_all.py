@@ -2,7 +2,6 @@
 # It stores all figures and csvs in dedicated folder, in results_all/
 # WARNING: it deletes all data in Results_all at each run !!!
 
-
 import matplotlib.pyplot as plt
 import pandas as pd
 from ion_formation_rate3 import IonFormation as ifr
@@ -15,8 +14,6 @@ import shutil
 
 dia_min = .75                          	# diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62                        	# (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
-
-wind_threshold = 12                 	# [m.s-1] wind threshold for BSE definition ??
 
 npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qualitatively determined blowing snow events
                      ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
@@ -52,39 +49,34 @@ def load_psd(filepath):
 	df = pd.read_parquet(filepath)
 	return df
 
-CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_5min_clean.parquet',
-			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean.parquet',
-			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean.parquet',
-			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean.parquet',
-			 'met'                  :   'Data-clean/polarstern_weather_clean.parquet'}
+CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_10min_clean.parquet',
+			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean_10min.parquet',
+			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean_10min.parquet',
+			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean_10min.parquet',
+			 'met'                  :   'Data-clean/polarstern_weather_clean_10min.parquet'}
 
 data_dic = {name : load_psd(filename) for name, filename in CLEAN_FILES.items()}
 
-print("The data have been loaded \n \t Preparing the data...")
+print("The data have been loaded \n \t Computing the results...")
 # ----------------------------------------------------------------------
 
 # ---- compute results for each npf event -------------
 res_dic = {}
 for start, end in npf_datetime_list_text:
 
-    # Slice datasets over a blowing snow event, rollmean to get rid of the noise and resample for common index
-    # nais_part_pos = data_dic['nais_part_pos_file'].loc[start:end].rolling(window = roll_period, center = True).mean()
-    # nais_ion_neg = data_dic['nais_ion_neg_file'].loc[start:end].rolling(window = roll_period, center = True).median()
-    # nais_ion_pos = data_dic['nais_ion_pos_file'].loc[start:end].rolling(window = roll_period, center = True).median()
-    # met = data_dic['met'].loc[start:end].rolling(window = roll_period, center = True).median()
+    # Slice datasets over a blowing snow event
+    nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start:end]#.resample('10min').median()
+    nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start:end]#.resample('10min').median()
+    nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end]#.resample('10min').median()
+    met_10min = data_dic['met'].loc[start:end]#.resample('10min').median()
 
-    nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start:end].resample('10min').median()
-    nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start:end].resample('10min').median()
-    nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end].resample('10min').median()
-    met_10min = data_dic['met'].loc[start:end].resample('10min').median()
-
-    nais_part_pos_10min = nais_part_pos_10min.rolling(window = roll_period, center = True).median()
-    nais_ion_neg_10min = nais_ion_neg_10min.rolling(window = roll_period, center = True).median()
-    nais_ion_pos_10min = nais_ion_pos_10min.rolling(window = roll_period, center = True).median()
-    met_10min = met_10min.rolling(window = roll_period, center = True).median()
+    # nais_part_pos_10min = nais_part_pos_10min.rolling(window = roll_period, center = True).median()
+    # nais_ion_neg_10min = nais_ion_neg_10min.rolling(window = roll_period, center = True).median()
+    # nais_ion_pos_10min = nais_ion_pos_10min.rolling(window = roll_period, center = True).median()
+    # met_10min = met_10min.rolling(window = roll_period, center = True).median()
     
 
-    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia = dia_min, high_dia = dia_max)
+    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, low_dia = dia_min, high_dia = dia_max, diff_order=3)
 
     event_name = start + 'to' + end
     res_dic[event_name] = res
@@ -113,5 +105,7 @@ for start, end in npf_datetime_list_text:
     plt.close()
 
     print(f"{event_dir} done")
+
+print(f"All results are stored in {results_dir}")
 
 # plt.show()

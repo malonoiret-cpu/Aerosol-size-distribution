@@ -10,6 +10,11 @@ Clean csv files are created holding the suffix "-clean"
 import pandas as pd
 import os
 
+# ---- Smoothing parameters -------
+resample_time = '10min'
+roll_period = '2h'
+
+
 cwd = os.path.dirname(os.path.realpath(__file__)) # cwd of this python script
 os.chdir(cwd)
 
@@ -30,10 +35,16 @@ RAW_FILES = {'smps'					:	('Data/smps_psd_5min_raw.csv', 64),
 			 'nais_ion_pos_file'	:	('Data/nais_pos_ions_raw.csv', 16)
 			 }
 
-CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_5min_clean.parquet',
-			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean.parquet',
-			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean.parquet',
-			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean.parquet'
+CLEAN_FILES_raw = {'smps_10min'				:	'Data-clean/smps_psd_clean.parquet',
+			 'nais_part_pos_file_10min'	:	'Data-clean/nais_pos_particles_clean.parquet',
+			 'nais_ion_neg_file_10min'	:	'Data-clean/nais_neg_ions_clean.parquet',
+			 'nais_ion_pos_file_10min'	:	'Data-clean/nais_pos_ions_clean.parquet'
+			 }
+
+CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_10min_clean.parquet',
+			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean_10min.parquet',
+			 'nais_ion_neg_file'	:	'Data-clean/nais_neg_ions_clean_10min.parquet',
+			 'nais_ion_pos_file'	:	'Data-clean/nais_pos_ions_clean_10min.parquet'
 			 }
 
 #%% checking that the paths exist
@@ -51,13 +62,22 @@ met = pd.read_csv('Data/polarstern_weather.csv', index_col='date_time',				# met
 met.index = pd.to_datetime(met.index, format='%m/%d/%Y %H:%M', errors='coerce')
 met = met[met.index.notna()].apply(pd.to_numeric, errors='coerce').sort_index()
 
+
 os.makedirs("Data-clean", exist_ok=True)	# Create the Data-clean folder if non-existing
 # creating the new clean parquets
 for name, path in CLEAN_FILES.items():
-	psds[name].to_parquet(path)
+	psds_10min = psds[name].resample(resample_time).median()
+	psds_10min_rolled = psds_10min.rolling(window = roll_period, center = True).median()
+	psds_10min_rolled.to_parquet(path)
 	print(f"{name} done")
 
+for name, path in CLEAN_FILES_raw.items():
+	psds[name].to_parquet(path)
+
 met.to_parquet('Data-clean/polarstern_weather_clean.parquet')
+met_res = met.resample(resample_time).median()
+met_res.to_parquet('Data-clean/polarstern_weather_clean_10min.parquet')
+
 
 data_dir = os.path.join(cwd, 'Data-clean')
 print(f"All files have succesfully been treated. The clean CSVs are in {data_dir}")

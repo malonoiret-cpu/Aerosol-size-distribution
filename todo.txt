@@ -52,12 +52,11 @@ what's needed :
 	- should exe_all.py store results in csv?
 	- consider met data in the class
 
-Questions: 	I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
+Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
 				-> do we have the data ?
-			To get rid of the noise, I rollmean. It doesn't work so well and is it even right?
-		
+			- To get rid of the noise, I rollmean. It doesn't work so well and is it even right?
+			- If I rollmean the psds, should I rollmean the met data as well?
 
-Wider finite differences — instead of diff() between consecutive steps (t and t+1), use a centered difference over a wider window (t-k and t+k).
-This is essentially a built-in smoother for the derivative and avoids the need to pre-filter
+
 
 Savitzky-Golay filter 
