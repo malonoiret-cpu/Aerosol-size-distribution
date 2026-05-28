@@ -80,7 +80,7 @@ class IonFormation:
         self.pos_alpha_term = self.alpha * self.pos_N_ion[:-1] * self.N_neg_ion_smaller[:-1]
         self.pos_chi_term = self.chi * self.N_particle[:-1] * self.N_pos_ion_smaller[:-1]
 
-            ## Compute the members of the Q_snow_neg equation 
+            ## Compute the members of the Q_snow_neg equation
         self.dNdp_dt_neg_ion = self._diff(self.neg_N_ion, order=diff_order)
         self.neg_coag_loss_term = self.calc_coag_loss(ion_psd = self.neg_ion_psd)[:-1] * self.neg_N_ion[:-1]
         self.neg_growth_rate_term = 0
@@ -125,6 +125,7 @@ class IonFormation:
                 r"$\chi$ term": self.neg_chi_term,
             }
         
+        self.dic_ratio = {name : self.dic_neg[name] / self.dic_pos[name] for name in self.dic_pos}
 
 
     def N_smaller(self, psd):
@@ -290,35 +291,7 @@ class IonFormation:
     def calc_growth_rate(self):
         """Calculate the growth rate"""
         return 0
-        
-    def rollmean(self, df = pd.DataFrame(), T = '30min'):
-        return df.rolling(window=T, center = True).mean()
-        
-    def Q_snow_plot(self, s: Literal['all', 'pos', 'neg'] = "all", T = '30min'):
-        plt.figure(figsize=(10, 6))
-
-        if s=='all' or s=='pos':
-            Q_snow = np.sum(self.Q_snow_pos, axis=1)
-            plt.plot(Q_snow, '.', color='tomato', alpha = 0.5, label='_Q snow pos')
-            plt.plot(self.rollmean(Q_snow), color = 'tomato', label = 'Q snow pos')
-
-        if s=='all' or s=='neg':
-            Q_snow = np.sum(self.Q_snow_neg, axis=1)
-            plt.plot(Q_snow, '.', color='blue', alpha = 0.5, label='_Q snow neg')
-            plt.plot(self.rollmean(Q_snow), color = 'blue', label = 'Q snow neg')
-        # Set the format for the date on the axis X
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))  # Формат дати (date format)
-        # plt.gca().xaxis.set_major_locator(mdates.HourLocator(interval=6))  # Визначаємо інтервал для підписів (кожні 6 годин) (6 hours interval signature)
-        plt.xticks(rotation=45)
-
-        plt.xlabel('Time')
-        plt.ylabel('Q snow [#/cm^3/s]')
-        plt.title('Q snow vs Time')
-        plt.legend()
-        plt.grid()
-        plt.tight_layout()
     
-
     def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list):
         """Plot concentration for each bin range given and the wind over time.
         Highlight the events studied with the given event list"""
@@ -333,7 +306,7 @@ class IonFormation:
             raise ValueError("s must be 'pos' or 'neg'")
         df_wind = self.met_df['true_wind_velocity']
         
-        fig, axs = plt.subplots(2,2, figsize = (14,14), sharex=True, sharey=True)
+        fig, axs = plt.subplots(2,2, figsize = (12,8), sharex=True, sharey=True)
 
         for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
             if self.smooth_window == None:
@@ -364,17 +337,19 @@ class IonFormation:
         plt.tight_layout()
 
         
-    def plot_hm_conc(self, s:Literal['pos','neg']='pos', T = '1h', vmini = None, vmaxi = None, cmap = "RdBu_r"):
+    def plot_hm_conc(self, s:Literal['pos','neg', 'ratio']='pos', T = '1h', vmini = None, vmaxi = None, cmap = "RdBu_r"):
         """Plot the heatmap of the concentrations over the time and the particle size"""
-
         if s == "pos":
             main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"
             df = self.pos_N_ion
         elif s == "neg":
             main_title = f"Negatively charged particles ({self.low_dia} to {self.high_dia} nm)"
             df = self.neg_N_ion
+        elif s == "ratio":
+            main_title = f"Positive / Negative ({self.low_dia} to {self.high_dia} nm)"
+            df = self.pos_N_ion / self.neg_N_ion
         else:
-            raise ValueError("s must be 'pos' or 'neg'")
+            raise ValueError("s must be 'pos', 'neg' or 'ratio")
         wind_df = self.met_df['true_wind_velocity'].rolling(window = T, center = True).mean()
         
         fig, ax1 = plt.subplots(figsize = (8,5))
@@ -400,7 +375,7 @@ class IonFormation:
         plt.tight_layout()
         
         
-    def plot_hm(self, s:Literal['pos','neg']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
+    def plot_hm(self, s:Literal['pos','neg', 'ratio']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
         """Plot Q_snow and its components in an heat map"""
 
         if s == "pos":
@@ -409,8 +384,11 @@ class IonFormation:
         elif s == "neg":
             main_title = f"Negatively charged particles ({self.low_dia} to {self.high_dia} nm)"
             data_dic = self.dic_neg
+        elif s == "ratio":
+            main_title = f"Positive / Negative ({self.low_dia} to {self.high_dia} nm)"
+            df = self.dic_ratio
         else:
-            raise ValueError("s must be 'pos' or 'neg'")
+            raise ValueError("s must be 'pos', 'neg' or 'ratio'")
         
         nplots = len(data_dic)
         fig, axes = plt.subplots(
@@ -441,7 +419,7 @@ class IonFormation:
         fig.autofmt_xdate()
         plt.tight_layout()
 
-    def plot_members(self, s:Literal['pos','neg']='pos', bin_ranges = [[.75,5.62], [10.,31.62]]):
+    def plot_members(self, s:Literal['pos','neg', 'ratio']='pos', bin_ranges = [[.75,5.62], [10.,31.62]]):
         """Plot the contribution for each members of the Q_snow equation (sum of all bins)"""
 
         if s == "pos":
@@ -452,14 +430,18 @@ class IonFormation:
             main_title = "Negatively charged particles"
             data_dic = self.dic_neg
             Q_snow = self.Q_snow_neg
+        elif s == "ratio":
+            main_title = f"Positive / Negative ({self.low_dia} to {self.high_dia} nm)"
+            data_dic = self.dic_ratio
+            Q_snow = self.dic_ratio["$Q_{\mathrm{snow}}$"]
         else:
-            raise ValueError("s must be 'pos' or 'neg'")
+            raise ValueError("s must be 'pos', 'neg' or 'ratio'")
         
         fig, axs = plt.subplots(1,2, figsize = (10,6))
         
         for ax, (bin_low, bin_high) in zip(axs, bin_ranges):
             ax.plot(Q_snow.loc[:,bin_low:bin_high].sum(axis=1), color = "red", label = "Q_snow")
-            for lab, df in list(data_dic.items())[2:]:
+            for lab, df in list(data_dic.items())[1:]:
                 ax.plot(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.5, label = lab)
 
             ax.set_xlabel("DateTime")

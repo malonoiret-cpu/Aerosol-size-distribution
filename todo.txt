@@ -46,7 +46,8 @@ todo
 
 
 what's needed : 
-	- study the noise to try to understand why we have negative production rate
+	- change plot_events so it can take in acount the smoothing (without changing the dataset for calculations!!)
+		- maybe plot the raw points anyway in background and plot the rollmean over that
 	- improve layout for hm_plot
 	- calculate the growth rate:
 		The growth rate can not be calculated for the whole time period, it needs to be calculated for each BSE. For the GR to be valid, the particle size needs to grow monotically.
@@ -56,7 +57,9 @@ what's needed :
 	- study one summer event
 	- do not rollmean the data before computing Q_snow!!!!!!!
 	- ratio pos/neg
+		-> mostly done, need to care about the dividers close to zero (which compress the plot bringing very high values)
 	- met -> when studying an event, compute mean temperature, wind and other useful quantities
+	- from which bin size is the production rate led by something else than dN/dt
 
 Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
 				-> do we have the data ?

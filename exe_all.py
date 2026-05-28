@@ -31,6 +31,7 @@ npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qual
 npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text]
 
 bin_ranges = [(0.75,  5.0), (5.0,  11.55), (11.55, 20.0), (20.0,  31.62)]
+bin_ranges_members = [[.75,5.62], [10.,31.62]]
 roll_period = None      # '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2
 qual = 150      # Output plots quality
@@ -53,14 +54,6 @@ data_dic = {name : load_psd(filename) for name, filename in CLEAN_FILES.items()}
 print("The data have been loaded \n \t Computing the results...")
 # ----------------------------------------------------------------------
 
-# ---- Plot the conc and wind over the whole time window to see the events --------
-nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_w:end_w]
-nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_w:end_w]
-nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
-met_10min = data_dic['met'].loc[start_w:end_w]
-
-res_w = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, low_dia=dia_min, high_dia=dia_max, diff_order=diff_order, smooth_window=roll_period)
-
 # ---- clean result folder --------------------
 results_dir = "Results_all"
 if os.path.exists(results_dir):
@@ -75,7 +68,8 @@ for start, end in npf_datetime_list_text:
     nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end]
     met_10min = data_dic['met'].loc[start:end]
 
-    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df = met_10min, low_dia = dia_min, high_dia = dia_max, diff_order=diff_order, smooth_window=roll_period)
+    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df = met_10min,
+              low_dia = dia_min, high_dia = dia_max, diff_order=diff_order, smooth_window=roll_period)
 
     event_name = start + 'to' + end
     res_dic[event_name] = res
@@ -86,12 +80,16 @@ for start, end in npf_datetime_list_text:
     os.makedirs(event_dir)
 
     # ---- generate the plots and save them
-    res.plot_members(s='pos')
+    res.plot_members(s='pos', bin_ranges= bin_ranges_members)
     plt.savefig(os.path.join(event_dir, "members_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res.plot_members(s='neg')
+    res.plot_members(s='neg', bin_ranges= bin_ranges_members)
     plt.savefig(os.path.join(event_dir, "members_neg.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
+
+    res.plot_members(s='ratio', bin_ranges= bin_ranges_members)
+    plt.savefig(os.path.join(event_dir, "members_ratio.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
     res.plot_hm(s='pos')
@@ -112,5 +110,27 @@ for start, end in npf_datetime_list_text:
 
     print(f"{event_dir} done")
 
-print(f"All results are stored in {results_dir}")
+print(f"All event results are saved in {results_dir} in their dedicated folder")
 
+# ---- Plot the conc and wind over the whole time window to see the events -----------
+print(f"Computing the results from {start_w} to {end_w} (global period) to show events...")
+
+nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_w:end_w]
+nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_w:end_w]
+nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
+met_10min = data_dic['met'].loc[start_w:end_w]
+print("\t Data loaded, computing the results...")
+
+res_w = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, low_dia=dia_min, high_dia=dia_max, diff_order=diff_order, smooth_window=roll_period)
+print("\t Results computed in the instance res_w")
+
+print("Saving the plots...")
+res_w.plot_events(s='pos', bin_ranges= bin_ranges, event_list= npf_datetime_list)
+plt.savefig(os.path.join(results_dir, "pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+
+res_w.plot_events(s='neg', bin_ranges= bin_ranges, event_list= npf_datetime_list)
+plt.savefig(os.path.join(results_dir, "neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+print(f"Global period plot are saved in {results_dir}")
+# ------------------------------------------------------------------------------------
