@@ -92,7 +92,9 @@ class IonFormation:
         ## -------------------------------------------------------------------------------------------------------------------------------
 
         # ---- Smooth if asked ------------------------------------------------------------------
+        self.smooth_window = smooth_window  # Used in plot events
         if smooth_window != None:
+            print(f"The results have been smoothed, taking the median over a {smooth_window} window.")
             self.Q_snow_pos = self.Q_snow_pos.rolling(window = smooth_window, center = True).median()
             self.dNdp_dt_pos_ion = self.dNdp_dt_pos_ion.rolling(window = smooth_window, center = True).median()
             self.pos_coag_loss_term = self.pos_coag_loss_term.rolling(window = smooth_window, center = True).median()
@@ -316,8 +318,50 @@ class IonFormation:
         plt.grid()
         plt.tight_layout()
     
-    # def all_plot(conc_df, met_df, T='72h', bin_ranges = bin_ranges):
-	#     """Print the global concentration of particles"""
+
+    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list):
+        """Plot concentration for each bin range given and the wind over time.
+        Highlight the events studied with the given event list"""
+
+        if s == 'pos':
+            df_conc = self.pos_N_ion
+            main_title = f"Positive ion concentration over the winter"
+        elif s == 'neg':
+            main_title = f"Negative ion concentration over the winter"
+            df_conc = self.neg_N_ion
+        else:
+            raise ValueError("s must be 'pos' or 'neg'")
+        df_wind = self.met_df['true_wind_velocity']
+        
+        fig, axs = plt.subplots(2,2, figsize = (14,14), sharex=True, sharey=True)
+
+        for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
+            if self.smooth_window == None:
+                ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
+            else:
+                df_conc_smoothed = df_conc.loc[:, lo:hi].sum(axis=1).rolling(window=self.smooth_window, center = True).median() # compute the smoothing
+                # ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '.', color = 'blue', alpha = 0.2, label = '_Concentration')
+                ax1.plot(df_conc_smoothed, '-', color = 'blue', label = 'Conc (smoothed)')
+            ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
+
+            ax2 = ax1.twinx()
+            ax2.plot(df_wind, '-', color = 'tomato', alpha = 0.5, label = 'Wind velocity')
+            ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+
+            ax1.set_xlabel("DateTime")
+            ax1.grid()
+            ax1.set_title(f"{lo} to {hi} nm")
+
+            for (start, end), ev_nb in zip(event_list, range(len(event_list))):
+                ax2.axvspan(xmin = start, xmax = end, color = 'tomato', alpha = 0.2)
+                ax2.text(start, np.max(df_wind), ev_nb)
+
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        fig.legend(lines1 + lines2, labels1 + labels2, loc="center", ncol=1)
+        fig.suptitle(main_title)
+        fig.autofmt_xdate()
+        plt.tight_layout()
 
         
     def plot_hm_conc(self, s:Literal['pos','neg']='pos', T = '1h', vmini = None, vmaxi = None, cmap = "RdBu_r"):

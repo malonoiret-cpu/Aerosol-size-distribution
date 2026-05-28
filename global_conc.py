@@ -41,10 +41,10 @@ def wind_detect(met_df, threshold = 12):
 	dfs = dfs.loc[dfs >= threshold]
 	return dfs
 
-def all_plot(conc_df, met_df, wind_threshold = 12, T='72h', bin_ranges = bin_ranges):
+def all_plot(conc_df, met_df, wind_threshold = 12, T='10min', bin_ranges = bin_ranges):
 	"""Print the global concentration of particles"""
 	dfs_roll = conc_df.rolling(window=T, center = True).mean()
-	wind_ev = wind_detect(met_df=met_df, threshold= wind_threshold)     #wind events
+	#wind_ev = wind_detect(met_df=met_df, threshold= wind_threshold)     #wind events
 	wind_df = met_df['true_wind_velocity'].rolling(window = T, center = True).mean()
 	
 	fig, axs = plt.subplots(2,2, figsize = (14,14), sharex=True, sharey=True)
