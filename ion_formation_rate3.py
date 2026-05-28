@@ -11,7 +11,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 class IonFormation:
     def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, met_df: pd.DataFrame, low_dia=None, high_dia=None,   \
 			  		pressure = 101.3, temperature = 298., alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183,                                 \
-                    diff_order: int = 5):
+                    diff_order: int = 2, smooth_window = None):
         # define constants
         self.BOLTZMANN = 1.380658e-23 	# [m**2 kg/s**2 K]
         self.SUTHERLAND = 110.4			# sutherland correction [K]
@@ -73,15 +73,7 @@ class IonFormation:
         ## -----------------------------------------------------------
 
         ## ---- Now the terms of the equation for Q_snow can be calculated ---------------------------------------------------------------
-        self.dtime = np.diff(self.nucmode_pos_ion_psd.index).astype(float) /1e9             # [s], divide by 1e9 to convert nanoseconds to seconds
-        self.dtime = self.dtime[:, None]
-
             ## Compute the members of the Q_snow_pos equation                                            
-        # self.dNdp_pos_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
-        #         np.diff(self.pos_N_ion.values, axis=0),
-        #         index=self.pos_N_ion.index[:-1],
-        #         columns=self.pos_N_ion.columns
-        #     )
         self.dNdp_dt_pos_ion = self._diff(self.pos_N_ion, order=diff_order)
         self.pos_coag_loss_term = self.calc_coag_loss(ion_psd = self.pos_ion_psd)[:-1] * self.pos_N_ion[:-1]
         self.pos_growth_rate_term = 0
@@ -89,11 +81,6 @@ class IonFormation:
         self.pos_chi_term = self.chi * self.N_particle[:-1] * self.N_pos_ion_smaller[:-1]
 
             ## Compute the members of the Q_snow_neg equation 
-        # self.dNdp_neg_ion = pd.DataFrame(                                                               # calculate the change in the nucmode_pnc over time
-        #         np.diff(self.neg_N_ion.values, axis=0), # returns numpy array, so it's needed to make a DataFrame
-        #         index=self.neg_N_ion.index[:-1],
-        #         columns=self.neg_N_ion.columns
-        #     )
         self.dNdp_dt_neg_ion = self._diff(self.neg_N_ion, order=diff_order)
         self.neg_coag_loss_term = self.calc_coag_loss(ion_psd = self.neg_ion_psd)[:-1] * self.neg_N_ion[:-1]
         self.neg_growth_rate_term = 0
@@ -103,6 +90,22 @@ class IonFormation:
         self.Q_snow_pos = self.Q_snow_calc(s = 'pos')
         self.Q_snow_neg = self.Q_snow_calc(s = 'neg')
         ## -------------------------------------------------------------------------------------------------------------------------------
+
+        # ---- Smooth if asked ------------------------------------------------------------------
+        if smooth_window != None:
+            self.Q_snow_pos = self.Q_snow_pos.rolling(window = smooth_window, center = True).median()
+            self.dNdp_dt_pos_ion = self.dNdp_dt_pos_ion.rolling(window = smooth_window, center = True).median()
+            self.pos_coag_loss_term = self.pos_coag_loss_term.rolling(window = smooth_window, center = True).median()
+            self.pos_growth_rate_term = 0
+            self.pos_alpha_term = self.pos_alpha_term.rolling(window = smooth_window, center = True).median()
+            self.pos_chi_term = self.pos_chi_term.rolling(window = smooth_window, center = True).median()
+
+            self.Q_snow_neg = self.Q_snow_neg.rolling(window = smooth_window, center = True).median()
+            self.dNdp_dt_neg_ion = self.dNdp_dt_neg_ion.rolling(window = smooth_window, center = True).median()
+            self.neg_coag_loss_term = self.neg_coag_loss_term.rolling(window = smooth_window, center = True).median()
+            self.neg_growth_rate_term = 0
+            self.neg_alpha_term = self.neg_alpha_term.rolling(window = smooth_window, center = True).median()
+            self.neg_chi_term = self.neg_chi_term.rolling(window = smooth_window, center = True).median()
 
         # store the results in dic for plots
         self.dic_pos = {
@@ -131,8 +134,8 @@ class IonFormation:
     
     def _diff(self, df: pd.DataFrame, order: int = 2):
         """
-        Compute dN/dt using a finite difference stencil.
-        order=2 : standard 2-point forward difference (current behaviour)
+        Compute dN/dt using different methods.
+        order=2 : standard 2-point forward difference (default value when calling the class)
         order=3 : 3-point central difference
         order=5 : 5-point central difference
         Returns a DataFrame aligned on the interior time index.

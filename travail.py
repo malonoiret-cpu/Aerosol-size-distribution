@@ -52,17 +52,17 @@ nais_ion_neg_10min = nais_ion_neg.resample('10min').median()
 nais_ion_pos_10min = nais_ion_pos.resample('10min').median()
 met_10min = met.resample('10min').median()
 
-if roll_period != None:
-	nais_part_pos_10min = nais_part_pos_10min.rolling(window = roll_period, center = True).median()
-	nais_ion_neg_10min = nais_ion_neg_10min.rolling(window = roll_period, center = True).median()
-	nais_ion_pos_10min = nais_ion_pos_10min.rolling(window = roll_period, center = True).median()
-	met_10min = met_10min.rolling(window = roll_period, center = True).median()
+# if roll_period != None:
+# 	nais_part_pos_10min = nais_part_pos_10min.rolling(window = roll_period, center = True).median()
+# 	nais_ion_neg_10min = nais_ion_neg_10min.rolling(window = roll_period, center = True).median()
+# 	nais_ion_pos_10min = nais_ion_pos_10min.rolling(window = roll_period, center = True).median()
+# 	met_10min = met_10min.rolling(window = roll_period, center = True).median()
 
 print("\t \t Data have been prepared")
 # -------------------------------------------------------------------------------------------
 
 # create the instance with the desired settings
-res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df= met_10min, low_dia=dia_min, high_dia=dia_max, diff_order=diff_ord)
+res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df= met_10min, low_dia=dia_min, high_dia=dia_max, diff_order=diff_ord, smooth_window=roll_period)
 print("The instance containing the result has been created (res)")
 
 # Prepare the folder for the savings

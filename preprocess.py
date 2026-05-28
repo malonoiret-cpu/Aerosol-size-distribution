@@ -1,10 +1,9 @@
 # csv pre-processing
 """
 Since the protocol on cleaning the csv data files is the same regardless the settings, this code pre-process the csv files to avoid doing it at every computations of exe.py
-Clean csv files are created holding the suffix "-clean"
-
-16/05/2026: this preprocesing is not so usefull, because most of the operations need to be made anyway in exe.py
-			It could be usefull if we consider resampling, merging or other things here.
+Cleaning means set the DateTime index, and convert the column headers to numeric for the psds. The clean dfs are saved as parquet files to conserve these changes.
+Clean parquet files are created holding the suffix "_clean"
+Clean and resampled (to have the same index beetwin the files) are created holding the suffix "_clean_10min"
 """
 
 import pandas as pd
@@ -56,7 +55,7 @@ for filename in all_paths:
 # load the data
 psds = {name : load_psd(path, div) for name, (path, div) in RAW_FILES.items()}		# nais and smps files
 
-met = pd.read_csv('Data/polarstern_weather.csv', index_col='date_time',				# met file (can maybe be reduced to only to columns (temp and pressure))
+met = pd.read_csv('Data/polarstern_weather.csv', index_col='date_time',				# met file
                   encoding='latin-1', low_memory=False,
                   na_values=['mm/dd/yyyy hh:mm'])
 met.index = pd.to_datetime(met.index, format='%m/%d/%Y %H:%M', errors='coerce')
@@ -64,14 +63,14 @@ met = met[met.index.notna()].apply(pd.to_numeric, errors='coerce').sort_index()
 
 
 os.makedirs("Data-clean", exist_ok=True)	# Create the Data-clean folder if non-existing
+
 # creating the new clean parquets
-for name, path in CLEAN_FILES.items():
+for name, path in CLEAN_FILES.items():							# Clean and resample
 	psds_10min = psds[name].resample(resample_time).median()
-	# psds_10min_rolled = psds_10min.rolling(window = roll_period, center = True).median()
 	psds_10min.to_parquet(path)
 	print(f"{name}_10min done")
-a = 'smps_10min'
-for name, path in CLEAN_FILES_raw.items():
+
+for name, path in CLEAN_FILES_raw.items():						# Clean
 	psds[name].to_parquet(path)
 	print(f"{name} done")
 
