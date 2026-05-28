@@ -330,25 +330,26 @@ class IonFormation:
             raise ValueError("s must be 'pos' or 'neg'")
         wind_df = self.met_df['true_wind_velocity'].rolling(window = T, center = True).mean()
         
-        fig, ax1 = plt.subplots()
+        fig, ax1 = plt.subplots(figsize = (8,5))
         im = ax1.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
                 shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
         ax1.set_ylabel("Diameter [nm]")
-        ax1.set_ylabel("DateTime")
+        ax1.set_xlabel("DateTime")
         ax1.set_title(main_title)
-        plt.colorbar(im, ax=ax1, pad=0.01)
+        # plt.colorbar(im, ax=ax1, pad=0.01)
 
-        # divider = make_axes_locatable(ax1)
-        # cax = divider.append_axes("right", size="3%", pad=0.1)
-        # cbar = fig.colorbar(im, cax=cax)
-        # cbar.set_label("Concentration")
+        # Use make_axes_locatable to carve a fixed-width colorbar axis
+        divider = make_axes_locatable(ax1)
+        cax = divider.append_axes("right", size="3%", pad=0.1)
+        cbar = fig.colorbar(im, cax=cax)
+        cbar.set_label("Concentration")
 
         ax2 = ax1.twinx()
+        ax2.spines["right"].set_position(("axes", 1.1))
         ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
         ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
-
-
-        fig.autofmt_xdate()
+        ax2.tick_params(axis='y', colors='tomato')
+        plt.setp(ax1.get_xticklabels(), rotation=30, ha='right')
         plt.tight_layout()
         
         
