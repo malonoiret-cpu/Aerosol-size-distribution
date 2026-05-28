@@ -53,6 +53,11 @@ what's needed :
 	- should exe_all.py store results in csv?
 	- consider met data in the class
 
+	- study one summer event
+	- do not rollmean the data before computing Q_snow!!!!!!!
+	- ratio pos/neg
+	- met -> when studying an event, compute mean temperature, wind and other useful quantities
+
 Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
 				-> do we have the data ?
 			- To get rid of the noise, I rollmean. It doesn't work so well and is it even right?
