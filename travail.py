@@ -29,8 +29,9 @@ npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'],
 
 npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text]
 
-bin_ranges = [(0.75,  1.78), (2.05,  2.74), (3.16, 5.62), (6.49,  31.62)]
-bin_ranges_members = [[.75,5.62], [15.4,31.62]]
+# bin_ranges = [(0.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]
+bin_ranges = [(0.75,  0.75), (0.87,  0.87), (1., 1.), (1.15,  1.15)]
+
 roll_period = None      # '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2
 qual = 150      # Output plots quality
@@ -82,9 +83,8 @@ res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df= m
 print("The instance containing the result has been created (res)")
 
 
-
-res.plot_members(s = 'pos', bin_ranges=bin_ranges, commony=True)
-res.plot_members(s = 'neg', bin_ranges=bin_ranges, commony=False)
+res.plot_members(s = 'pos', bin_ranges=bin_ranges, commony=False, logsc = False)
+res.plot_members(s = 'neg', bin_ranges=bin_ranges, commony=False, logsc = False)
 plt.show()
 
 # Prepare the folder for the savings
@@ -99,15 +99,15 @@ plt.show()
 #     os.makedirs(event_dir)
 
 # # ---- generate the plots and save them
-# res.plot_members(s='pos', bin_ranges= bin_ranges_members)
+# res.plot_members(s='pos', bin_ranges= bin_ranges)
 # plt.savefig(os.path.join(event_dir, "members_pos.png"), dpi=qual, bbox_inches='tight')
 # plt.close()
 
-# res.plot_members(s='neg', bin_ranges= bin_ranges_members)
+# res.plot_members(s='neg', bin_ranges= bin_ranges)
 # plt.savefig(os.path.join(event_dir, "members_neg.png"), dpi=qual, bbox_inches='tight')
 # plt.close()
 
-# res.plot_members(s='ratio', bin_ranges= bin_ranges_members)
+# res.plot_members(s='ratio', bin_ranges= bin_ranges)
 # plt.savefig(os.path.join(event_dir, "members_ratio.png"), dpi=qual, bbox_inches='tight')
 # plt.close()
 

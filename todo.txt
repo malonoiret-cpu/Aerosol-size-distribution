@@ -52,31 +52,41 @@ todo
 
 
 what's needed : 
-	- change plot_events so it can take in acount the smoothing (without changing the dataset for calculations!!)
-		- maybe plot the raw points anyway in background and plot the rollmean over that
+	- consider calculating the importance of the members by ratio (ie Q_snow / member term)
+	- should maybe plot_member for all size bins to see if some are behaving differently
 	- improve layout for hm_plot
 	- calculate the growth rate:
 		The growth rate can not be calculated for the whole time period, it needs to be calculated for each BSE. For the GR to be valid, the particle size needs to grow monotically.
 	- should exe_all.py store results in csv?
-	- consider met data in the class
+
 
 
 Answers to first discussion:
 	- study one summer event
-	- do not rollmean the data before computing Q_snow!!!!!!!
+
+	- do not rollmean the data before computing Q_snow
+		-> done
+
 	- ratio pos/neg
-		-> mostly done, need to care about the dividers close to zero (which compress the plot bringing very high values)
-	- met -> when studying an event, compute mean temperature, wind and other useful quantities
+		-> done. Although, I cut of the low dividers values (<1), so we can see something on the graph. Should consider that 
+	
+	- met: when studying an event, compute and show mean temperature, wind and other useful quantities (not done yet)
+
+	- Consider T and P in CoagL
+		-> done. The result is that the effect of CoagL decrease a bit, but it doesn't change a lot the interpretation of the results.
+
 	- from which bin size is the production rate led by something else than dN/dt
-		-> From 6.49: Q_snow is still mainly driven by dN/dt, but the coagS term is visible (up to half of Qsnow at the most)
-		-> From 7.5: quite the same
-		-> Frome 8.66: a bit less (up to 1/3 at the most)
-		-> from 10.: a bit less (up to 1/5 at the most)
+		-> I changed plot_members so it plots for 4 different size-bin ranges:
+		- Up to 0.87 nm, the production rate behave the same way
+		- From 0.87 to ..., they behave a bit differently but are also clearly driven by the CoagL
+		- From 10. (8.66) nm, the production rate seem to be clearly driven by dN/dt
+
 
 Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
 				-> do we have the data ?
-			- To get rid of the noise, I rollmean. It doesn't work so well and is it even right?
-			- If I rollmean the psds, should I rollmean the met data as well?
+			- I sliced the NPF looking at the total concentration (all size bins).
+				When looking at concentrations for each concentration, we see that the peaks happen at different times, often out of the chosen NPF
+				How should I define the NPF events then ???
 
 
 

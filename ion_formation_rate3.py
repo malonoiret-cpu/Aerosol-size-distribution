@@ -7,10 +7,11 @@ import matplotlib.colors as colors
 import matplotlib.dates as mdates
 from typing import Literal
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import itertools
 
 class IonFormation:
     def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, met_df: pd.DataFrame, low_dia=None, high_dia=None,   \
-			  		pressure = 101.3, temperature = 298., alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183,                                 \
+			  		pressure = None, temperature = None, alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183,                                 \
                     diff_order: int = 2, smooth_window = None):
         # define constants
         self.BOLTZMANN = 1.380658e-23 	# [m**2 kg/s**2 K]
@@ -25,9 +26,11 @@ class IonFormation:
         self.alpha = alpha				# ion-ion recombination coefficient [cm**3/s]
         self.chi = chi					# ion-aerosol attachment coefficient [cm**3/s]
 
-        ## Met data? Shall we consider DataFrames to have the temperature and pressure for each date?
-        self.pressure = pressure
-        self.temperature = temperature
+        ## Set constant temperature and pressure. If None, met data are considered
+        self.pressure = pressure            # 101.3
+        self.pressure_series = met_df['air_pressure'] * 0.1             # [kPa]
+        self.temperature = temperature      # 298.
+        self.temperature_series = met_df['air_temperature'] + 273.15    # [K]
         
         # Variables
         ## ---- Mesurement data ------------------------------------
@@ -75,7 +78,7 @@ class IonFormation:
         ## ---- Now the terms of the equation for Q_snow can be calculated ---------------------------------------------------------------
             ## Compute the members of the Q_snow_pos equation                                            
         self.dNdp_dt_pos_ion = self._diff(self.pos_N_ion, order=diff_order)
-        self.pos_coag_loss_term = self.calc_coag_loss(ion_psd = self.pos_ion_psd)[:-1] * self.pos_N_ion[:-1]
+        self.pos_coag_loss_term = self.calc_coag_loss(ion_psd = self.pos_ion_psd)[:-1] * self.pos_N_ion[:-1]    # T, P dependent
         self.pos_growth_rate_term = 0
         self.pos_alpha_term = self.alpha * self.pos_N_ion[:-1] * self.N_neg_ion_smaller[:-1]
         self.pos_chi_term = self.chi * self.N_particle[:-1] * self.N_pos_ion_smaller[:-1]
@@ -125,7 +128,15 @@ class IonFormation:
                 r"$\chi$ term": self.neg_chi_term,
             }
         
-        self.dic_ratio = {name : self.dic_neg[name] / self.dic_pos[name] for name in self.dic_pos}
+        # self.dic_ratio = {name : self.dic_neg[name].div(self.dic_pos[name]).replace([np.inf, -np.inf], np.nan) for name in self.dic_pos}
+        threshold = 1.0  # cm-3, adjust to what makes physical sense
+        self.dic_ratio = {}
+        for name in self.dic_pos:
+            pos = self.dic_pos[name]
+            neg = self.dic_neg[name]
+            ratio = neg / pos
+            ratio = ratio.where(pos.abs() >= threshold, other=np.nan)  # mask near-zero denominators
+            self.dic_ratio[name] = ratio
 
 
     def N_smaller(self, psd):
@@ -166,18 +177,18 @@ class IonFormation:
 
         return pd.DataFrame(dN / dt, index=idx, columns=df.columns)
 
-    def mean_free_path_calc(self):
+    def mean_free_path_calc(self, T, P):
         """Compute the mean free path from the reference (at T = 296.15 [K], P = 101.3 [kPa]; MFP_REF = 6.730e-8 [m])
         Output: float: mean free path [m]"""
-        mfp = self.MFP_REF * (self.P_REF / self.pressure) * (self.temperature / self.T_REF)                \
-            * ((1.0 + self.SUTHERLAND / self.T_REF)/(1.0 + self.SUTHERLAND / self.temperature)) # [m])
+        mfp = self.MFP_REF * (self.P_REF / P) * (T / self.T_REF)                \
+            * ((1.0 + self.SUTHERLAND / self.T_REF)/(1.0 + self.SUTHERLAND / T)) # [m])
         return mfp
 	
-    def viscosity_calc(self):
+    def viscosity_calc(self, T):
         """Compute the viscosity (simplification of the TSI equation, given by Ernie Lewis)
         Input: temperature [K] (default 298 K)
         Output: float: viscosity"""
-        return self.VISCOSITY_REF * (self.temperature / self.T_REF)**0.78
+        return self.VISCOSITY_REF * (T / self.T_REF)**0.78
 
     def calc_coag_loss(self, ion_psd):
         """Compute the coagulation loss. First, all units are converted to centimeters to compute CoagS in cm. Then, the total coag loss for each time step is calculated.
@@ -187,8 +198,7 @@ class IonFormation:
 
         # convert all dimensions for the coagulation losses to cm
         boltzmann = self.BOLTZMANN * 10000 		# units for boltzmann constant is in [m**2 kg/s**2 K], multiplied by 10000 to convert to [cm**2*kg/s**2*K]
-        mfp = self.mean_free_path_calc() * 100 	# mean free path multiplied by 100 to get it in [cm]
-        mu = self.viscosity_calc() / 100 		# viscosity, divide by 100 to convert [kg/m*s] to [kg/cm*s]
+        
 
         # create a subset of the PSD over which the CoagS is calculated, based on input diameters
         nuc_mode_psd = ion_psd.loc[:, self.low_dia:self.high_dia]
@@ -206,36 +216,6 @@ class IonFormation:
         # Reshape to get matrices (N,1) and (1,M), so product gives (N,M)
         d1 = bins_nuc[:, None]   # shape (N, 1)
         d2 = bins_part[None, :]  # shape (1, M)
-
-        ## Compute values for Kij
-        # slip correction factor
-        Cc1 = 1.0 + (2.0 * mfp / d1) * (1.257 + 0.4 * np.exp(-1.1 * d1 / (2.0 * mfp)))  # (N, 1)
-        Cc2 = 1.0 + (2.0 * mfp / d2) * (1.257 + 0.4 * np.exp(-1.1 * d2 / (2.0 * mfp)))  # (1, M)
-
-        # diffusivity [cm**2/s]
-        D1 = (boltzmann * self.temperature * Cc1) / (3.0 * np.pi * mu * d1)  # (N, 1)
-        D2 = (boltzmann * self.temperature * Cc2) / (3.0 * np.pi * mu * d2)  # (1, M)
-
-        # mass of particles [kg]
-        m1 = (1.0 / 6.0) * np.pi * (d1**3.0) * self.rho		# (N, 1)
-        m2 = (1.0 / 6.0) * np.pi * (d2**3.0) * self.rho		# (1, M)
-
-        # average velocity [cm/s]
-        c_bar1 = ((8.0 * boltzmann * self.temperature) / (np.pi * m1))**0.5  # (N, 1)
-        c_bar2 = ((8.0 * boltzmann * self.temperature) / (np.pi * m2))**0.5  # (1, M)
-
-        # mean free path [cm]
-        l1 = 8.0 * D1 / (np.pi * c_bar1)  # (N, 1)
-        l2 = 8.0 * D2 / (np.pi * c_bar2)  # (1, M)
-
-        # correction terms
-        g1 = (1.0 / (3.0 * d1 * l1)) * ((d1 + l1)**3.0 - (d1**2.0 + l1**2.0)**(3.0/2.0)) - d1  # (N, 1)
-        g2 = (1.0 / (3.0 * d2 * l2)) * ((d2 + l2)**3.0 - (d2**2.0 + l2**2.0)**(3.0/2.0)) - d2  # (1, M)
-
-        # coagulation coefficient [cm**3/s] matrix with shape (N, M) (rate constante for collisions)
-        Kij = 2.0 * np.pi * (D1 + D2) * (d1 + d2) / 										\
-            ((((d1 + d2) / (d1 + d2 + 2.0 * (g1**2.0 + g2**2.0)**0.5)) 						\
-            + (8.0 * (D1 + D2) / ((c_bar1**2.0 + c_bar2**2.0)**0.5 * (d1 + d2))))**-1.0)
         
         # upper triangle mask: keeps only j >= i pairs, zeros the rest (replaces j loop range(i, M))
         triu_mask = np.triu(np.ones((N, M), dtype=bool))  # shape (N, M)
@@ -247,6 +227,44 @@ class IonFormation:
         coag_loss_all_sum = []	# list to save the cumulative coagulation loss in the nuc mode for each scan (final list)
 
         for t in range(len(ion_psd.index)):
+            
+            timestamp = ion_psd.index[t]
+            T = self.temperature if self.temperature is not None else self.temperature_series.loc[timestamp]
+            P = self.pressure if self.pressure is not None else self.pressure_series[timestamp]
+
+            mfp = self.mean_free_path_calc(T=T, P=P) * 100 	# mean free path multiplied by 100 to get it in [cm]
+            mu = self.viscosity_calc(T=T) / 100 		# viscosity, divide by 100 to convert [kg/m*s] to [kg/cm*s]
+
+            ## Compute values for Kij
+            # slip correction factor
+            Cc1 = 1.0 + (2.0 * mfp / d1) * (1.257 + 0.4 * np.exp(-1.1 * d1 / (2.0 * mfp)))  # (N, 1)
+            Cc2 = 1.0 + (2.0 * mfp / d2) * (1.257 + 0.4 * np.exp(-1.1 * d2 / (2.0 * mfp)))  # (1, M)
+
+            # diffusivity [cm**2/s]
+            D1 = (boltzmann * T * Cc1) / (3.0 * np.pi * mu * d1)  # (N, 1)
+            D2 = (boltzmann * T * Cc2) / (3.0 * np.pi * mu * d2)  # (1, M)
+
+            # mass of particles [kg]
+            m1 = (1.0 / 6.0) * np.pi * (d1**3.0) * self.rho		# (N, 1)
+            m2 = (1.0 / 6.0) * np.pi * (d2**3.0) * self.rho		# (1, M)
+
+            # average velocity [cm/s]
+            c_bar1 = ((8.0 * boltzmann * T) / (np.pi * m1))**0.5  # (N, 1)
+            c_bar2 = ((8.0 * boltzmann * T) / (np.pi * m2))**0.5  # (1, M)
+
+            # mean free path [cm]
+            l1 = 8.0 * D1 / (np.pi * c_bar1)  # (N, 1)
+            l2 = 8.0 * D2 / (np.pi * c_bar2)  # (1, M)
+
+            # correction terms
+            g1 = (1.0 / (3.0 * d1 * l1)) * ((d1 + l1)**3.0 - (d1**2.0 + l1**2.0)**(3.0/2.0)) - d1  # (N, 1)
+            g2 = (1.0 / (3.0 * d2 * l2)) * ((d2 + l2)**3.0 - (d2**2.0 + l2**2.0)**(3.0/2.0)) - d2  # (1, M)
+
+            # coagulation coefficient [cm**3/s] matrix with shape (N, M) (rate constante for collisions)
+            Kij = 2.0 * np.pi * (D1 + D2) * (d1 + d2) / 										\
+                ((((d1 + d2) / (d1 + d2 + 2.0 * (g1**2.0 + g2**2.0)**0.5)) 						\
+                + (8.0 * (D1 + D2) / ((c_bar1**2.0 + c_bar2**2.0)**0.5 * (d1 + d2))))**-1.0)
+
             conc_nuc  = nuc_mode_psd.iloc[t].to_numpy()          # shape (N,)
             conc_part = particle_psd.iloc[t].to_numpy()      # shape (M,)
 
@@ -261,6 +279,7 @@ class IonFormation:
 
             # Jij = np.nan_to_num(Jij, nan=0.0)                       # fix the NaN issue (ignore NaNs in the sum)
             coag_loss_all_sum.append(Jij.sum(axis=1))
+
         return pd.DataFrame(
                 np.array(coag_loss_all_sum),
                 index=ion_psd.index,
@@ -292,7 +311,7 @@ class IonFormation:
         """Calculate the growth rate"""
         return 0
     
-    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list):
+    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list, commony = False):
         """Plot concentration for each bin range given and the wind over time.
         Highlight the events studied with the given event list"""
 
@@ -306,7 +325,7 @@ class IonFormation:
             raise ValueError("s must be 'pos' or 'neg'")
         df_wind = self.met_df['true_wind_velocity']
         
-        fig, axs = plt.subplots(2,2, figsize = (12,8), sharex=True, sharey=True)
+        fig, axs = plt.subplots(2,2, figsize = (12,8), sharex=True, sharey=commony)
 
         for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
             if self.smooth_window == None:
@@ -323,21 +342,22 @@ class IonFormation:
 
             ax1.set_xlabel("DateTime")
             ax1.grid()
-            ax1.set_title(f"{lo} to {hi} nm")
+            subtitle = f"{lo} nm" if lo == hi else f"{lo} to {hi} nm"
+            ax1.set_title(subtitle)
 
             for (start, end), ev_nb in zip(event_list, range(len(event_list))):
                 ax2.axvspan(xmin = start, xmax = end, color = 'tomato', alpha = 0.2)
                 ax2.text(start, np.max(df_wind), ev_nb)
 
-        lines1, labels1 = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        fig.legend(lines1 + lines2, labels1 + labels2, loc="center", ncol=1)
+        # lines1, labels1 = ax1.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # fig.legend(lines1 + lines2, labels1 + labels2, loc="center", ncol=1)
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
 
         
-    def plot_hm_conc(self, s:Literal['pos','neg', 'ratio']='pos', T = '1h', vmini = None, vmaxi = None, cmap = "RdBu_r"):
+    def plot_hm_conc(self, s:Literal['pos','neg', 'ratio']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"):
         """Plot the heatmap of the concentrations over the time and the particle size"""
         if s == "pos":
             main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"
@@ -350,7 +370,7 @@ class IonFormation:
             df = self.pos_N_ion / self.neg_N_ion
         else:
             raise ValueError("s must be 'pos', 'neg' or 'ratio")
-        wind_df = self.met_df['true_wind_velocity'].rolling(window = T, center = True).mean()
+        wind_df = self.met_df['true_wind_velocity']
         
         fig, ax1 = plt.subplots(figsize = (8,5))
         im = ax1.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
@@ -364,7 +384,7 @@ class IonFormation:
         divider = make_axes_locatable(ax1)
         cax = divider.append_axes("right", size="3%", pad=0.1)
         cbar = fig.colorbar(im, cax=cax)
-        cbar.set_label("Concentration")
+        cbar.set_label(r"Concentration ($cm^{-1}$)")
 
         ax2 = ax1.twinx()
         ax2.spines["right"].set_position(("axes", 1.1))
@@ -420,7 +440,11 @@ class IonFormation:
         plt.tight_layout()
 
     def plot_members(self, bin_ranges, s:Literal['pos','neg', 'ratio']='pos', commony :bool = False, logsc: bool = False):
-        """Plot the contribution for each members of the Q_snow equation (sum of all bins)"""
+        """Plot the contribution for each members of the Q_snow equation (sum of all bins)
+        Inputs: - bin_ranges: list; Bin ranges used for plots [[x1,y1], [x2,y2], ...]
+                - s: string; 'pos', 'neg' or 'ratio' (which is pos/neg)
+                - commony: bool; If True, the y-axis scale is the same for all plot
+                - logsc: bool; if True, y-axis is logarithmic"""
 
         if s == "pos":
             main_title = f"Positively charged particles"
@@ -443,26 +467,23 @@ class IonFormation:
 
             plotfun = ax.semilogy if logsc else ax.plot     # Decide whether log scale or not on y-axis
 
+            
+            ind_start = 2 if logsc else 1   # Plot dN/dt only if not log scale
+            for lab, df in list(data_dic.items())[ind_start:]:
+                plotfun(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.7, label = lab)
+
             # keep only pos values if log scale
             Q_snow_pos_values = Q_snow.loc[Q_snow.loc[:, bin_low:bin_high].sum(axis=1) > 0,bin_low:bin_high] if logsc else Q_snow.loc[:,bin_low:bin_high]
-
-            plotfun(Q_snow_pos_values.sum(axis=1), color = "red", label = r"$Q_{\mathrm{snow}}$")
-
-            if logsc == False: # Plot dN/dt if not logscale
-                plotfun(data_dic[r"$\partial N / \partial t$"].loc[:,bin_low:bin_high].sum(axis=1), color = "tomato", label = r"$\partial N / \partial t$")
-            for lab, df in list(data_dic.items())[2:]:
-                plotfun(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.5, label = lab)
+            plotfun(Q_snow_pos_values.sum(axis=1), color = "red", lw = 0.7, label = r"$Q_{\mathrm{snow}}$")
 
             ax.set_xlabel("DateTime")
             ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
             ax.grid()
-            ax.set_title(f"{bin_low} to {bin_high} nm")
+            subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
+            ax.set_title(subtitle)
             lines, labels = ax.get_legend_handles_labels()
 
         fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
-
-    
-    
