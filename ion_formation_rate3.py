@@ -419,7 +419,7 @@ class IonFormation:
         fig.autofmt_xdate()
         plt.tight_layout()
 
-    def plot_members(self, s:Literal['pos','neg', 'ratio']='pos', bin_ranges = [[.75,5.62], [10.,31.62]]):
+    def plot_members(self, bin_ranges, s:Literal['pos','neg', 'ratio']='pos', commony :bool = False, logsc: bool = False):
         """Plot the contribution for each members of the Q_snow equation (sum of all bins)"""
 
         if s == "pos":
@@ -433,23 +433,34 @@ class IonFormation:
         elif s == "ratio":
             main_title = f"Positive / Negative ({self.low_dia} to {self.high_dia} nm)"
             data_dic = self.dic_ratio
-            Q_snow = self.dic_ratio["$Q_{\mathrm{snow}}$"]
+            Q_snow = self.dic_ratio[r"$Q_{\mathrm{snow}}$"]
         else:
             raise ValueError("s must be 'pos', 'neg' or 'ratio'")
         
-        fig, axs = plt.subplots(1,2, figsize = (10,6))
-        
-        for ax, (bin_low, bin_high) in zip(axs, bin_ranges):
-            ax.plot(Q_snow.loc[:,bin_low:bin_high].sum(axis=1), color = "red", label = "Q_snow")
-            for lab, df in list(data_dic.items())[1:]:
-                ax.plot(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.5, label = lab)
+        fig, axs = plt.subplots(2,2, figsize = (12,8), sharex= True, sharey=commony)
+
+        for ax, (bin_low, bin_high) in zip(axs.flatten(), bin_ranges):
+
+            plotfun = ax.semilogy if logsc else ax.plot     # Decide whether log scale or not on y-axis
+
+            # keep only pos values if log scale
+            Q_snow_pos_values = Q_snow.loc[Q_snow.loc[:, bin_low:bin_high].sum(axis=1) > 0,bin_low:bin_high] if logsc else Q_snow.loc[:,bin_low:bin_high]
+
+            plotfun(Q_snow_pos_values.sum(axis=1), color = "red", label = r"$Q_{\mathrm{snow}}$")
+
+            if logsc == False: # Plot dN/dt if not logscale
+                plotfun(data_dic[r"$\partial N / \partial t$"].loc[:,bin_low:bin_high].sum(axis=1), color = "tomato", label = r"$\partial N / \partial t$")
+            for lab, df in list(data_dic.items())[2:]:
+                plotfun(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.5, label = lab)
 
             ax.set_xlabel("DateTime")
-            ax.set_ylabel(r"Production rate \[$cm^{-3}.s^{-1}$\]")
-            ax.legend()
+            ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
+            ax.grid()
             ax.set_title(f"{bin_low} to {bin_high} nm")
+            lines, labels = ax.get_legend_handles_labels()
+
+        fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
         fig.suptitle(main_title)
-        plt.grid()
         fig.autofmt_xdate()
         plt.tight_layout()
 

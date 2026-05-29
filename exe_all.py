@@ -31,7 +31,7 @@ npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qual
 npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text]
 
 bin_ranges = [(0.75,  5.0), (5.0,  11.55), (11.55, 20.0), (20.0,  31.62)]
-bin_ranges_members = [[.75,5.62], [10.,31.62]]
+bin_ranges_members = [[.75,5.62], [6.49,31.62]]
 roll_period = None      # '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2
 qual = 150      # Output plots quality
@@ -80,15 +80,16 @@ for start, end in npf_datetime_list_text:
     os.makedirs(event_dir)
 
     # ---- generate the plots and save them
-    res.plot_members(s='pos', bin_ranges= bin_ranges_members)
+    sharey = True
+    res.plot_members(bin_ranges= bin_ranges_members, s='pos', commony= sharey)
     plt.savefig(os.path.join(event_dir, "members_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res.plot_members(s='neg', bin_ranges= bin_ranges_members)
+    res.plot_members(bin_ranges= bin_ranges_members, s='pos', commony= sharey)
     plt.savefig(os.path.join(event_dir, "members_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res.plot_members(s='ratio', bin_ranges= bin_ranges_members)
+    res.plot_members(bin_ranges= bin_ranges_members, s='pos', commony= sharey)
     plt.savefig(os.path.join(event_dir, "members_ratio.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 

@@ -42,6 +42,12 @@ todo
 						- update on the class: possibility to do wider difference when computing dNdP/dt 
 						- No Savitzky-Golay filter yet
 	- Preprocess creates ..._10min.parquet files that are already resampled and rollmeaned (should they be rollmeaned ? no, could rollmean in the class to have more control)
+
+28/05:
+	- had meeting. See what's needed below
+	- Changed the smooth method. No smoothing is set by default
+	- the conc wind and events plot is in the class (plot_events)
+	- compute the ratio beetween pos and neg -> need to care about the divisions by zero.
 	
 
 
@@ -54,12 +60,18 @@ what's needed :
 	- should exe_all.py store results in csv?
 	- consider met data in the class
 
+
+Answers to first discussion:
 	- study one summer event
 	- do not rollmean the data before computing Q_snow!!!!!!!
 	- ratio pos/neg
 		-> mostly done, need to care about the dividers close to zero (which compress the plot bringing very high values)
 	- met -> when studying an event, compute mean temperature, wind and other useful quantities
 	- from which bin size is the production rate led by something else than dN/dt
+		-> From 6.49: Q_snow is still mainly driven by dN/dt, but the coagS term is visible (up to half of Qsnow at the most)
+		-> From 7.5: quite the same
+		-> Frome 8.66: a bit less (up to 1/3 at the most)
+		-> from 10.: a bit less (up to 1/5 at the most)
 
 Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
 				-> do we have the data ?
@@ -69,3 +81,7 @@ Questions: 	- I sliced the NPF events manually. Papers state that it is when the
 
 
 Savitzky-Golay filter 
+
+Size bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
+        3.16,  3.65,  4.22,  4.87,  5.62,  6.49,   7.5,  8.66,  10.0, 11.55,
+       13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]

@@ -29,7 +29,8 @@ npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'],
 
 npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text]
 
-bin_ranges = [(0.75,  5.0), (5.0,  11.55), (11.55, 20.0), (20.0,  31.62)]
+bin_ranges = [(0.75,  1.78), (2.05,  2.74), (3.16, 5.62), (6.49,  31.62)]
+bin_ranges_members = [[.75,5.62], [15.4,31.62]]
 roll_period = None      # '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2
 qual = 150      # Output plots quality
@@ -82,19 +83,50 @@ print("The instance containing the result has been created (res)")
 
 
 
-## Ratio between pos and neg
-
-res.plot_members(s='ratio')
+res.plot_members(s = 'pos', bin_ranges=bin_ranges, commony=True)
+res.plot_members(s = 'neg', bin_ranges=bin_ranges, commony=False)
 plt.show()
 
-
-# # Prepare the folder for the savings
-# # ---- clean result folder --------------------
+# Prepare the folder for the savings
+# ---- clean result folder --------------------
 # results_dir = "Results"
 # if os.path.exists(results_dir):
 #     shutil.rmtree(results_dir)
     
 # # ---- make the directory to the dedicated folder
-#     event_slug = f"{start[:10]}_to_{end[:10]}"
+#     event_slug = f"{start_ev[:10]}_to_{end_ev[:10]}"
 #     event_dir = os.path.join(results_dir, event_slug)
 #     os.makedirs(event_dir)
+
+# # ---- generate the plots and save them
+# res.plot_members(s='pos', bin_ranges= bin_ranges_members)
+# plt.savefig(os.path.join(event_dir, "members_pos.png"), dpi=qual, bbox_inches='tight')
+# plt.close()
+
+# res.plot_members(s='neg', bin_ranges= bin_ranges_members)
+# plt.savefig(os.path.join(event_dir, "members_neg.png"), dpi=qual, bbox_inches='tight')
+# plt.close()
+
+# res.plot_members(s='ratio', bin_ranges= bin_ranges_members)
+# plt.savefig(os.path.join(event_dir, "members_ratio.png"), dpi=qual, bbox_inches='tight')
+# plt.close()
+
+# res.plot_hm(s='pos')
+# plt.savefig(os.path.join(event_dir, "heatmap_pos.png"), dpi=150, bbox_inches='tight')
+# plt.close()
+
+# res.plot_hm(s='neg')
+# plt.savefig(os.path.join(event_dir, "heatmap_neg.png"), dpi=150, bbox_inches='tight')
+# plt.close()
+
+# res.plot_hm_conc(s='pos')
+# plt.savefig(os.path.join(event_dir, "conc_hm_pos.png"), dpi=qual, bbox_inches='tight')
+# plt.close()
+
+# res.plot_hm_conc(s='neg')
+# plt.savefig(os.path.join(event_dir, "conc_hm_neg.png"), dpi=qual, bbox_inches='tight')
+# plt.close()
+
+# print(f"{event_dir} done")
+
+# print(f"All event results are saved in {results_dir} in their dedicated folder")
