@@ -328,15 +328,15 @@ class IonFormation:
         fig, axs = plt.subplots(2,2, figsize = (12,8), sharex=True, sharey=commony)
 
         for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
-            if self.smooth_window == None:
+
+            if self.smooth_window == None:      # Smoothing here se it doesn't affect the results
                 ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
             else:
                 df_conc_smoothed = df_conc.loc[:, lo:hi].sum(axis=1).rolling(window=self.smooth_window, center = True).median() # compute the smoothing
-                # ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '.', color = 'blue', alpha = 0.2, label = '_Concentration')
                 ax1.plot(df_conc_smoothed, '-', color = 'blue', label = 'Conc (smoothed)')
             ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
 
-            ax2 = ax1.twinx()
+            ax2 = ax1.twinx()   # Plot the wind
             ax2.plot(df_wind, '-', color = 'tomato', alpha = 0.5, label = 'Wind velocity')
             ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
 
@@ -345,13 +345,10 @@ class IonFormation:
             subtitle = f"{lo} nm" if lo == hi else f"{lo} to {hi} nm"
             ax1.set_title(subtitle)
 
-            for (start, end), ev_nb in zip(event_list, range(len(event_list))):
+            for (start, end), ev_nb in zip(event_list, range(len(event_list))):     # Plot the wind events
                 ax2.axvspan(xmin = start, xmax = end, color = 'tomato', alpha = 0.2)
                 ax2.text(start, np.max(df_wind), ev_nb)
 
-        # lines1, labels1 = ax1.get_legend_handles_labels()
-        # lines2, labels2 = ax2.get_legend_handles_labels()
-        # fig.legend(lines1 + lines2, labels1 + labels2, loc="center", ncol=1)
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()

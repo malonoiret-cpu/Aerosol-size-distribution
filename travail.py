@@ -31,8 +31,19 @@ npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end
 
 # bin_ranges = [(0.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]
 bin_ranges = [(0.75,  0.75), (0.87,  0.87), (1., 1.), (1.15,  1.15)]
+bin_ranges1 = [(1.33, 1.33), (1.54, 1.54), (1.78, 1.78), (2.05, 2.05)]
+bin_ranges2 = [(2.37, 2.37), (2.74, 2.74), (3.16, 3.16), (3.65, 3.65)]
+bin_ranges3 = [(4.22, 4.22), (4.87, 4.87), (5.62, 5.62), (6.49, 6.49)]
+bin_ranges4 = [(7.5, 7.5), (8.66, 8.66), (10., 10.), (11.55, 11.55)]
+bin_ranges5 = [(13.34, 13.34), (15.4, 15.4), (17.78, 17.78), (20.54, 20.54)]
+bin_ranges6 = [(23.71, 23.71), (27.38, 27.38), (31.62, 31.62)]
+bin_all = [bin_ranges, bin_ranges1, bin_ranges2, bin_ranges3, bin_ranges4, bin_ranges5, bin_ranges6]
 
-roll_period = None      # '2h', if not None, apply a rolling median over the time given to smooth the data
+[0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
+        3.16,  3.65,  4.22,  4.87,  5.62,  6.49,   7.5,  8.66,  10.0, 11.55,
+       13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
+
+roll_period = '6h'      # '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2
 qual = 150      # Output plots quality
 # ---------------------------------------------------------------------------
@@ -82,9 +93,12 @@ res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df= m
 		  low_dia=dia_min, high_dia=dia_max, diff_order=diff_order, smooth_window=roll_period)
 print("The instance containing the result has been created (res)")
 
+for bin_ran in bin_all:
+	#res_w.plot_events(s = 'pos', bin_ranges=bin_ran, event_list=npf_datetime_list, commony=False)
+	res_w.plot_events(s = 'neg', bin_ranges=bin_ran, event_list=npf_datetime_list, commony=False)
 
-res.plot_members(s = 'pos', bin_ranges=bin_ranges, commony=False, logsc = False)
-res.plot_members(s = 'neg', bin_ranges=bin_ranges, commony=False, logsc = False)
+# res.plot_members(s = 'pos', bin_ranges=bin_ranges, commony=False, logsc = False)
+# res.plot_members(s = 'neg', bin_ranges=bin_ranges, commony=False, logsc = False)
 plt.show()
 
 # Prepare the folder for the savings
