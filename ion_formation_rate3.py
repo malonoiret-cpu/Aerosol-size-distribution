@@ -385,9 +385,10 @@ class IonFormation:
 
         ax2 = ax1.twinx()
         ax2.spines["right"].set_position(("axes", 1.1))
-        ax2.plot(wind_df, '-', color = 'tomato', label = 'Daily wind')
+        ax2.plot(wind_df, '-', color = 'tomato', lw = 0.7, label = 'Daily wind')
         ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
         ax2.tick_params(axis='y', colors='tomato')
+
         plt.setp(ax1.get_xticklabels(), rotation=30, ha='right')
         plt.tight_layout()
         
@@ -459,7 +460,9 @@ class IonFormation:
             raise ValueError("s must be 'pos', 'neg' or 'ratio'")
         
         wind_df = self.met_df['true_wind_velocity']
-        wind_mean = round(wind_df.mean(), 2)
+        wind_mean = wind_df.mean()
+
+        temp_mean = self.temperature_series.mean() if self.temperature is None else self.temperature
         
         fig, axs = plt.subplots(2,2, figsize = (12,8), sharex= True, sharey=commony)
 
@@ -489,7 +492,7 @@ class IonFormation:
             ax2.set_ylabel("Wind ($m.s^{-1}$)", color=color) #, fontsize=8
             ax2.tick_params(axis='y', colors=color) #, labelsize=7
 
-        fig.text(0.5, 0.5, rf"Average wind = {wind_mean} $m \cdot s^{{-1}}$", ha='center', va='center')
+        fig.text(0.5, 0.5, rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
         fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
         fig.suptitle(main_title)
         fig.autofmt_xdate()

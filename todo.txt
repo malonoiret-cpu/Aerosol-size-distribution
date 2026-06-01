@@ -70,7 +70,8 @@ Answers to first discussion:
 	- ratio pos/neg
 		-> done. Although, I cut of the low dividers values (<1), so we can see something on the graph. Should consider that 
 	
-	- met: when studying an event, compute and show mean temperature, wind and other useful quantities (not done yet)
+	- met: when studying an event, compute and show mean temperature, wind and other useful quantities
+		->
 
 	- Consider T and P in CoagL
 		-> done. The result is that the effect of CoagL decrease a bit, but it doesn't change a lot the interpretation of the results.

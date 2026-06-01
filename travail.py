@@ -8,11 +8,11 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-12-01 00:00:00'     # winter time window
-end_w = '2020-03-01 00:00:00'
+start_w = '2020-06-01 00:00:00'
+end_w = '2020-09-01 00:00:00'
 
 npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qualitatively determined blowing snow events
-                     ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
+                     ['2019-12-16 06:00:00', '2019-12-16 15:00:00'],
                      ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
                      ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
                      ['2020-01-26 06:00:00', '2020-01-27 12:00:00'],
@@ -37,15 +37,15 @@ roll_period = None          # i.e '2h', if not None, apply a rolling median over
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
-# bin_ranges = [(0.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]
-bin_ranges = [(0.75,  0.75), (0.87,  0.87), (1., 1.), (1.15,  1.15)]
+bin_ranges = [(0.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]
+bin_ranges0 = [(0.75,  0.75), (0.87,  0.87), (1., 1.), (1.15,  1.15)]
 bin_ranges1 = [(1.33, 1.33), (1.54, 1.54), (1.78, 1.78), (2.05, 2.05)]
 bin_ranges2 = [(2.37, 2.37), (2.74, 2.74), (3.16, 3.16), (3.65, 3.65)]
 bin_ranges3 = [(4.22, 4.22), (4.87, 4.87), (5.62, 5.62), (6.49, 6.49)]
 bin_ranges4 = [(7.5, 7.5), (8.66, 8.66), (10., 10.), (11.55, 11.55)]
 bin_ranges5 = [(13.34, 13.34), (15.4, 15.4), (17.78, 17.78), (20.54, 20.54)]
 bin_ranges6 = [(23.71, 23.71), (27.38, 27.38), (31.62, 31.62)]
-bin_all = [bin_ranges, bin_ranges1, bin_ranges2, bin_ranges3, bin_ranges4, bin_ranges5, bin_ranges6]
+bin_all = [bin_ranges0, bin_ranges1, bin_ranges2, bin_ranges3, bin_ranges4, bin_ranges5, bin_ranges6]
 
 qual = 150              # Output plots quality
 sharey = False          # Share y-axis when subplotting (not on heat map)
@@ -87,7 +87,7 @@ print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
-event_number = 0
+event_number = 1
 event_dates = npf_datetime_list_text[event_number]
 start_ev = event_dates[0]
 end_ev = event_dates[1]
@@ -101,12 +101,9 @@ res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min
 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
 			diff_order=diff_order, smooth_window=roll_period)
 print("The instance containing the result has been created (res)")
+# ---------------------------------------------------------------------------------------
 
-# print("Q_snow_pos: \n", res.Q_snow_pos)
-# print("Q_snow_neg: \n", res.Q_snow_neg)
-
-res.plot_members(s='pos', bin_ranges=bin_ranges)
-res.plot_members(s='neg', bin_ranges=bin_ranges)
+res.plot_hm('pos')
 plt.show()
 
 
@@ -114,51 +111,3 @@ plt.show()
 # for bin_ran in bin_all:
 # 	#res_w.plot_events(s = 'pos', bin_ranges=bin_ran, event_list=npf_datetime_list, commony=False)
 # 	res_w.plot_events(s = 'neg', bin_ranges=bin_ran, event_list=npf_datetime_list, commony=False)
-
-# # res.plot_members(s = 'pos', bin_ranges=bin_ranges, commony=False, logsc = False)
-# # res.plot_members(s = 'neg', bin_ranges=bin_ranges, commony=False, logsc = False)
-# plt.show()
-
-# Prepare the folder for the savings
-# ---- clean result folder --------------------
-# results_dir = "Results"
-# if os.path.exists(results_dir):
-#     shutil.rmtree(results_dir)
-    
-# # ---- make the directory to the dedicated folder
-#     event_slug = f"{start_ev[:10]}_to_{end_ev[:10]}"
-#     event_dir = os.path.join(results_dir, event_slug)
-#     os.makedirs(event_dir)
-
-# # ---- generate the plots and save them
-# res.plot_members(s='pos', bin_ranges= bin_ranges)
-# plt.savefig(os.path.join(event_dir, "members_pos.png"), dpi=qual, bbox_inches='tight')
-# plt.close()
-
-# res.plot_members(s='neg', bin_ranges= bin_ranges)
-# plt.savefig(os.path.join(event_dir, "members_neg.png"), dpi=qual, bbox_inches='tight')
-# plt.close()
-
-# res.plot_members(s='ratio', bin_ranges= bin_ranges)
-# plt.savefig(os.path.join(event_dir, "members_ratio.png"), dpi=qual, bbox_inches='tight')
-# plt.close()
-
-# res.plot_hm(s='pos')
-# plt.savefig(os.path.join(event_dir, "heatmap_pos.png"), dpi=150, bbox_inches='tight')
-# plt.close()
-
-# res.plot_hm(s='neg')
-# plt.savefig(os.path.join(event_dir, "heatmap_neg.png"), dpi=150, bbox_inches='tight')
-# plt.close()
-
-# res.plot_hm_conc(s='pos')
-# plt.savefig(os.path.join(event_dir, "conc_hm_pos.png"), dpi=qual, bbox_inches='tight')
-# plt.close()
-
-# res.plot_hm_conc(s='neg')
-# plt.savefig(os.path.join(event_dir, "conc_hm_neg.png"), dpi=qual, bbox_inches='tight')
-# plt.close()
-
-# print(f"{event_dir} done")
-
-# print(f"All event results are saved in {results_dir} in their dedicated folder")
