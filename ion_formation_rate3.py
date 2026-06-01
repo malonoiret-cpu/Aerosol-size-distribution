@@ -459,6 +459,7 @@ class IonFormation:
             raise ValueError("s must be 'pos', 'neg' or 'ratio'")
         
         wind_df = self.met_df['true_wind_velocity']
+        wind_mean = round(wind_df.mean(), 2)
         
         fig, axs = plt.subplots(2,2, figsize = (12,8), sharex= True, sharey=commony)
 
@@ -481,7 +482,14 @@ class IonFormation:
             ax.set_title(subtitle)
             lines, labels = ax.get_legend_handles_labels()
 
+            # plot wind
+            color = "#d80ec7"
+            ax2 = ax.twinx()
+            ax2.plot(wind_df, color = color, alpha = 0.5, lw = 0.8, label = "Wind velocity")
+            ax2.set_ylabel("Wind ($m.s^{-1}$)", color=color) #, fontsize=8
+            ax2.tick_params(axis='y', colors=color) #, labelsize=7
 
+        fig.text(0.5, 0.5, rf"Average wind = {wind_mean} $m \cdot s^{{-1}}$", ha='center', va='center')
         fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
         fig.suptitle(main_title)
         fig.autofmt_xdate()

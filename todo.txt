@@ -86,6 +86,8 @@ Answers to first discussion:
 			- The bigger aerosols (from 20.54 nm) Also behave a bit differently. They still have peaks during NFP, but show other peaks
 			- same for neg and pos
 
+		-> for sub nm particles, the negative ion production rate seems to be higher than the positive
+
 
 
 Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
