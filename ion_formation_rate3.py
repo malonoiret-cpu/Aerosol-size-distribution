@@ -57,8 +57,8 @@ class IonFormation:
 
         ## ---- Slice the psd to the range considered---------------- should consider the [:,-1] ?
             # pos and neg ion psd in the range of interest
-        self.nucmode_pos_ion_psd = self.pos_ion_psd.loc[:, self.low_dia:self.high_dia] # slice the size distribution down to the selected size bin of interest
-        self.pos_N_ion = self.nucmode_pos_ion_psd # [#/cm**3], the concentration of pos ions between dp_min and dp_max
+        self.nucmode_pos_ion_psd = self.pos_ion_psd.loc[:, self.low_dia:self.high_dia]  # slice the size distribution down to the selected size bin of interest
+        self.pos_N_ion = self.nucmode_pos_ion_psd                                       # [#/cm**3], the concentration of pos ions between dp_min and dp_max
 
         self.nucmode_neg_ion_psd = self.neg_ion_psd.loc[:, self.low_dia:self.high_dia]
         self.neg_N_ion = self.nucmode_neg_ion_psd # [#/cm**3], matrix (T,N)
@@ -76,7 +76,7 @@ class IonFormation:
         ## -----------------------------------------------------------
 
         ## ---- Now the terms of the equation for Q_snow can be calculated ---------------------------------------------------------------
-            ## Compute the members of the Q_snow_pos equation                                            
+            ## Compute the members of the Q_snow_pos equation
         self.dNdp_dt_pos_ion = self._diff(self.pos_N_ion, order=diff_order)
         self.pos_coag_loss_term = self.calc_coag_loss(ion_psd = self.pos_ion_psd)[:-1] * self.pos_N_ion[:-1]    # T, P dependent
         self.pos_growth_rate_term = 0
@@ -458,20 +458,21 @@ class IonFormation:
         else:
             raise ValueError("s must be 'pos', 'neg' or 'ratio'")
         
+        wind_df = self.met_df['true_wind_velocity']
+        
         fig, axs = plt.subplots(2,2, figsize = (12,8), sharex= True, sharey=commony)
 
         for ax, (bin_low, bin_high) in zip(axs.flatten(), bin_ranges):
 
             plotfun = ax.semilogy if logsc else ax.plot     # Decide whether log scale or not on y-axis
 
-            
             ind_start = 2 if logsc else 1   # Plot dN/dt only if not log scale
             for lab, df in list(data_dic.items())[ind_start:]:
                 plotfun(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.7, label = lab)
 
             # keep only pos values if log scale
             Q_snow_pos_values = Q_snow.loc[Q_snow.loc[:, bin_low:bin_high].sum(axis=1) > 0,bin_low:bin_high] if logsc else Q_snow.loc[:,bin_low:bin_high]
-            plotfun(Q_snow_pos_values.sum(axis=1), color = "red", lw = 0.7, label = r"$Q_{\mathrm{snow}}$")
+            plotfun(Q_snow_pos_values.sum(axis=1), color = "red", ls = '--', lw = 0.7, label = r"$Q_{\mathrm{snow}}$")
 
             ax.set_xlabel("DateTime")
             ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
@@ -479,6 +480,7 @@ class IonFormation:
             subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
             ax.set_title(subtitle)
             lines, labels = ax.get_legend_handles_labels()
+
 
         fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
         fig.suptitle(main_title)

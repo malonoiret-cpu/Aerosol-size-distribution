@@ -11,8 +11,6 @@ import os
 
 # ---- Smoothing parameters -------
 resample_time = '10min'
-roll_period = '2h'
-
 
 cwd = os.path.dirname(os.path.realpath(__file__)) # cwd of this python script
 os.chdir(cwd)

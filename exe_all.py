@@ -39,8 +39,17 @@ roll_period = None          # '2h', if not None, apply a rolling median over the
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
-# bin_ranges = [(0.75,  0.75), (0.87,  0.87), (1., 1.), (1.15,  1.15)]    # For subplots
-bin_ranges = [(0.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]
+
+bin_ranges = [(0.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]    # For subplots
+bin_ranges0 = [(0.75,  0.75), (0.87,  0.87), (1., 1.), (1.15,  1.15)]
+bin_ranges1 = [(1.33, 1.33), (1.54, 1.54), (1.78, 1.78), (2.05, 2.05)]
+bin_ranges2 = [(2.37, 2.37), (2.74, 2.74), (3.16, 3.16), (3.65, 3.65)]
+bin_ranges3 = [(4.22, 4.22), (4.87, 4.87), (5.62, 5.62), (6.49, 6.49)]
+bin_ranges4 = [(7.5, 7.5), (8.66, 8.66), (10., 10.), (11.55, 11.55)]
+bin_ranges5 = [(13.34, 13.34), (15.4, 15.4), (17.78, 17.78), (20.54, 20.54)]
+bin_ranges6 = [(23.71, 23.71), (27.38, 27.38), (31.62, 31.62)]
+bin_all = [bin_ranges0, bin_ranges1, bin_ranges2, bin_ranges3, bin_ranges4, bin_ranges5, bin_ranges6]
+
 sharey = False       # Share y-axis when subplotting (not on heat map)
 ylogscale = False   # log scale on y-axis
 qual = 150          # Output plots quality
@@ -117,6 +126,22 @@ for start, end in npf_datetime_list_text:
     res.plot_hm_conc(s='neg')
     plt.savefig(os.path.join(event_dir, "conc_hm_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
+
+    # plots for each size bins
+    event_dir_pb = os.path.join(event_dir, "per_bin") # Create a dedicated foler for per bin results
+    os.makedirs(event_dir_pb)
+    for bins in bin_all:
+         filename_pos = f"{bins[0][0]}_to_{bins[-1][-1]}_pos.png"
+         filename_neg = f"{bins[0][0]}_to_{bins[-1][-1]}_neg.png"
+
+         res.plot_members(bin_ranges=bins, s = 'pos', commony = sharey, logsc = ylogscale)
+         plt.savefig(os.path.join(event_dir_pb, filename_pos), dpi = qual, bbox_inches = 'tight')
+         plt.close()
+
+         res.plot_members(bin_ranges=bins, s = 'neg', commony = sharey, logsc = ylogscale)
+         plt.savefig(os.path.join(event_dir_pb, filename_neg), dpi = qual, bbox_inches = 'tight')
+         plt.close()
+
 
     print(f"{event_dir} done")
 
