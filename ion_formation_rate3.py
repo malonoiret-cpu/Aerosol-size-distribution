@@ -323,22 +323,26 @@ class IonFormation:
             df_conc = self.neg_N_ion
         else:
             raise ValueError("s must be 'pos' or 'neg'")
+        
         df_wind = self.met_df['true_wind_velocity']
         
-        fig, axs = plt.subplots(2,2, figsize = (12,8), sharex=True, sharey=commony)
+        if self.smooth_window is not None:
+            df_conc = df_conc.rolling(window=self.smooth_window, center = True).mean()
+            df_wind = df_wind.rolling(window=self.smooth_window, center = True).mean()
+        nplots = len(bin_ranges)
+        ncol = int(np.ceil(np.sqrt(nplots)))
+        nrow = int(nplots / ncol)
+
+        fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*8,nrow*5), sharex=True, sharey=commony, squeeze=False)
 
         for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
 
-            if self.smooth_window == None:      # Smoothing here se it doesn't affect the results
-                ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
-            else:
-                df_conc_smoothed = df_conc.loc[:, lo:hi].sum(axis=1).rolling(window=self.smooth_window, center = True).median() # compute the smoothing
-                ax1.plot(df_conc_smoothed, '-', color = 'blue', label = 'Conc (smoothed)')
-            ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
-
             ax2 = ax1.twinx()   # Plot the wind
-            ax2.plot(df_wind, '-', color = 'tomato', alpha = 0.5, label = 'Wind velocity')
+            ax2.plot(df_wind, '-', alpha = 0.5, color = 'tomato', label = 'Wind velocity')
             ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+
+            ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
+            ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
 
             ax1.set_xlabel("DateTime")
             ax1.grid()

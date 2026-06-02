@@ -8,10 +8,10 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2020-06-01 00:00:00'
-end_w = '2020-09-01 00:00:00'
+start_w = '2019-12-01 00:00:00'
+end_w = '2020-03-20 00:00:00'
 
-npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qualitatively determined blowing snow events
+npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'],# ['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qualitatively determined blowing snow events
                      ['2019-12-16 06:00:00', '2019-12-16 15:00:00'],
                      ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
                      ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
@@ -24,20 +24,28 @@ npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qual
                      ['2020-02-23 00:00:00', '2020-02-28 00:00:00']
                      ]
 
+npf_datetime_list_text = [['2019-12-02 00:00:00', '2019-12-06 00:00:00'],
+						  ['2019-12-07 00:00:00', '2019-12-10 00:00:00'],
+						  ['2020-01-15 00:00:00', '2020-01-16 00:00:00'],
+						  ['2020-01-26 00:00:00', '2020-01-27 00:00:00'],
+						  ['2020-02-02 00:00:00', '2020-02-04 00:00:00'],
+						  ['2020-02-12 00:00:00', '2020-02-16 00:00:00'],
+						  ['2020-02-18 00:00:00', '2020-02-22 00:00:00']]
+
 npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text] # For plot_events
 
     # Physics settings
-temperature = None          # [K], if None, met_data considered, else considered as constant (298K was default)
-pressure = None             # [kPa], if None, met_data considered, else considered as constant (101.3 was default)
+temperature = 298          # [K], if None, met_data considered, else considered as constant (298K was default)
+pressure = 101.3             # [kPa], if None, met_data considered, else considered as constant (101.3 was default)
 
 dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = None          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = '12h'          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
-bin_ranges = [(0.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]
+bin_ranges = [(0.75,  31.62), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]
 bin_ranges0 = [(0.75,  0.75), (0.87,  0.87), (1., 1.), (1.15,  1.15)]
 bin_ranges1 = [(1.33, 1.33), (1.54, 1.54), (1.78, 1.78), (2.05, 2.05)]
 bin_ranges2 = [(2.37, 2.37), (2.74, 2.74), (3.16, 3.16), (3.65, 3.65)]
@@ -103,7 +111,8 @@ res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min
 print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
-res.plot_hm('pos')
+# res.plot_members(bin_ranges=bin_ranges, s = 'pos')
+res_w.plot_events(s = 'pos', bin_ranges=[[0.75, 31.62]], event_list=npf_datetime_list)
 plt.show()
 
 

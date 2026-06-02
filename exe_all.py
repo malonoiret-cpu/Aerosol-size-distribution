@@ -13,7 +13,8 @@ import shutil
 start_w = '2019-12-01 00:00:00'     # winter time window
 end_w = '2020-03-01 00:00:00'
 
-npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # qualitatively determined blowing snow events
+# qualitatively determined blowing snow events
+npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'], # B
                      ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
                      ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
                      ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
@@ -168,6 +169,14 @@ plt.close()
 
 res_w.plot_events(s='neg', bin_ranges= bin_ranges, event_list= npf_datetime_list, commony=sharey)
 plt.savefig(os.path.join(results_dir, "neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+
+res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], event_list= npf_datetime_list, commony=sharey)
+plt.savefig(os.path.join(results_dir, "all_pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+
+res_w.plot_events(s='neg', bin_ranges= [[dia_min,dia_max]], event_list= npf_datetime_list, commony=sharey)
+plt.savefig(os.path.join(results_dir, "all_neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
 plt.close()
 print(f"Global period plot are saved in {results_dir}")
 # ------------------------------------------------------------------------------------
