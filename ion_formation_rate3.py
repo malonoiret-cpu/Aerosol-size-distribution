@@ -128,7 +128,6 @@ class IonFormation:
                 r"$\chi$ term": self.neg_chi_term,
             }
         
-        # self.dic_ratio = {name : self.dic_neg[name].div(self.dic_pos[name]).replace([np.inf, -np.inf], np.nan) for name in self.dic_pos}
         threshold = 1.0  # cm-3, adjust to what makes physical sense
         self.dic_ratio = {}
         for name in self.dic_pos:
@@ -329,10 +328,10 @@ class IonFormation:
         if self.smooth_window is not None:
             df_conc = df_conc.rolling(window=self.smooth_window, center = True).mean()
             df_wind = df_wind.rolling(window=self.smooth_window, center = True).mean()
-        nplots = len(bin_ranges)
-        ncol = int(np.ceil(np.sqrt(nplots)))
-        nrow = int(nplots / ncol)
 
+        nplots = len(bin_ranges)                #
+        ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
+        nrow = int(nplots / ncol)               #
         fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*8,nrow*5), sharex=True, sharey=commony, squeeze=False)
 
         for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
@@ -368,10 +367,16 @@ class IonFormation:
             df = self.neg_N_ion
         elif s == "ratio":
             main_title = f"Positive / Negative ({self.low_dia} to {self.high_dia} nm)"
-            df = self.pos_N_ion / self.neg_N_ion
+            df = self.neg_N_ion / self.pos_N_ion
+            df = df.where(self.pos_N_ion.abs() >= 1, other=np.nan)  # mask near-zero denominators
         else:
             raise ValueError("s must be 'pos', 'neg' or 'ratio")
+        
         wind_df = self.met_df['true_wind_velocity']
+
+        if self.smooth_window is not None:  # smooth data if asked
+            df = df.rolling(window=self.smooth_window, center = True).mean()
+            wind_df = wind_df.rolling(window=self.smooth_window, center = True).mean()
         
         fig, ax1 = plt.subplots(figsize = (8,5))
         im = ax1.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
@@ -468,7 +473,10 @@ class IonFormation:
 
         temp_mean = self.temperature_series.mean() if self.temperature is None else self.temperature
         
-        fig, axs = plt.subplots(2,2, figsize = (12,8), sharex= True, sharey=commony)
+        nplots = len(bin_ranges)                #
+        ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
+        nrow = int(np.ceil(nplots / ncol))               #
+        fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*6,nrow*4), sharex= True, sharey=commony, squeeze=False)
 
         for ax, (bin_low, bin_high) in zip(axs.flatten(), bin_ranges):
 

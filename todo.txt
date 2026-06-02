@@ -96,6 +96,7 @@ Questions: 	- I sliced the NPF events manually. Papers state that it is when the
 			- I sliced the NPF looking at the total concentration (all size bins).
 				When looking at concentrations for each concentration, we see that the peaks happen at different times, often out of the chosen NPF
 				How should I define the NPF events then ???
+			- Are the data I have clean? There's some time stamp with very high values which compress the output plots. Are we expecting such a variability in the measurments?
 
 
 
