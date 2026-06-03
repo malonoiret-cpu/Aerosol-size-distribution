@@ -334,16 +334,21 @@ class IonFormation:
         nrow = int(nplots / ncol)               #
         fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*8,nrow*5), sharex=True, sharey=commony, squeeze=False)
 
-        for ax1, (lo, hi) in zip(axs.flatten(), bin_ranges):
+        for idx, (ax1, (lo, hi)) in enumerate(zip(axs.flatten(), bin_ranges)):
+            
+            col = idx%ncol
 
             ax2 = ax1.twinx()   # Plot the wind
             ax2.plot(df_wind, '-', alpha = 0.5, color = 'tomato', label = 'Wind velocity')
-            ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+            if col == ncol -1:
+                ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+                ax2.tick_params(axis='y', colors='tomato')
+            else : ax2.tick_params(axis='y', colors='tomato')
 
             ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
             ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
-
-            ax1.set_xlabel("DateTime")
+            if col == 0:
+                ax1.set_xlabel("DateTime")
             ax1.grid()
             subtitle = f"{lo} nm" if lo == hi else f"{lo} to {hi} nm"
             ax1.set_title(subtitle)
@@ -366,7 +371,7 @@ class IonFormation:
             main_title = f"Negatively charged particles ({self.low_dia} to {self.high_dia} nm)"
             df = self.neg_N_ion
         elif s == "ratio":
-            main_title = f"Positive / Negative ({self.low_dia} to {self.high_dia} nm)"
+            main_title = f"Negative / Positive ({self.low_dia} to {self.high_dia} nm)"
             df = self.neg_N_ion / self.pos_N_ion
             df = df.where(self.pos_N_ion.abs() >= 1, other=np.nan)  # mask near-zero denominators
         else:
@@ -379,6 +384,13 @@ class IonFormation:
             wind_df = wind_df.rolling(window=self.smooth_window, center = True).mean()
         
         fig, ax1 = plt.subplots(figsize = (8,5))
+
+        ax2 = ax1.twinx()
+        ax2.spines["right"].set_position(("axes", 1.15))
+        ax2.plot(wind_df, '-', color = 'tomato', lw = 0.7, label = 'Daily wind')
+        ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
+        ax2.tick_params(axis='y', colors='tomato')
+
         im = ax1.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
                 shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
         ax1.set_ylabel("Diameter [nm]")
@@ -390,13 +402,7 @@ class IonFormation:
         divider = make_axes_locatable(ax1)
         cax = divider.append_axes("right", size="3%", pad=0.1)
         cbar = fig.colorbar(im, cax=cax)
-        cbar.set_label(r"Concentration ($cm^{-1}$)")
-
-        ax2 = ax1.twinx()
-        ax2.spines["right"].set_position(("axes", 1.1))
-        ax2.plot(wind_df, '-', color = 'tomato', lw = 0.7, label = 'Daily wind')
-        ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
-        ax2.tick_params(axis='y', colors='tomato')
+        cbar.set_label(r"Concentration ($cm^{-3}$)")
 
         plt.setp(ax1.get_xticklabels(), rotation=30, ha='right')
         plt.tight_layout()
@@ -427,21 +433,19 @@ class IonFormation:
 
         for ax, (title, df) in zip(axes, data_dic.items()):
         # transpose so: y = size, x = time
-            im = ax.pcolormesh(
-                df.index,
-                df.columns,
-                df.T,           # transpose DataFrame to have time on the x-axis
-                shading="auto",
-                cmap=cmap,
-                vmin= vmini,
-                vmax= vmaxi,
-            )
+            im = ax.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
+                shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
 
             ax.set_ylabel("Diameter [nm]")
             ax.set_title(title)
-            plt.colorbar(im, ax=ax, pad=0.01)
-        
-        axes[-1].set_xlabel("Time")
+            # plt.colorbar(im, ax=ax, pad=0.01)
+
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes("right", size="2%", pad=0.1)
+            cbar = fig.colorbar(im, cax=cax)
+            cbar.set_label(r"Concentration ($cm^{-3}$)")
+
+        axes[-1].set_xlabel("DateTime")
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
@@ -478,9 +482,10 @@ class IonFormation:
         nrow = int(np.ceil(nplots / ncol))               #
         fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*6,nrow*4), sharex= True, sharey=commony, squeeze=False)
 
-        for ax, (bin_low, bin_high) in zip(axs.flatten(), bin_ranges):
+        for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
 
             plotfun = ax.semilogy if logsc else ax.plot     # Decide whether log scale or not on y-axis
+            col = idx%ncol  # column index for plotting columns
 
             ind_start = 2 if logsc else 1   # Plot dN/dt only if not log scale
             for lab, df in list(data_dic.items())[ind_start:]:
@@ -490,8 +495,9 @@ class IonFormation:
             Q_snow_pos_values = Q_snow.loc[Q_snow.loc[:, bin_low:bin_high].sum(axis=1) > 0,bin_low:bin_high] if logsc else Q_snow.loc[:,bin_low:bin_high]
             plotfun(Q_snow_pos_values.sum(axis=1), color = "red", ls = '--', lw = 0.7, label = r"$Q_{\mathrm{snow}}$")
 
+            if col == 0:
+                ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
             ax.set_xlabel("DateTime")
-            ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
             ax.grid()
             subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
             ax.set_title(subtitle)
@@ -501,10 +507,13 @@ class IonFormation:
             color = "#d80ec7"
             ax2 = ax.twinx()
             ax2.plot(wind_df, color = color, alpha = 0.5, lw = 0.8, label = "Wind velocity")
-            ax2.set_ylabel("Wind ($m.s^{-1}$)", color=color) #, fontsize=8
-            ax2.tick_params(axis='y', colors=color) #, labelsize=7
+            if col == ncol -1:
+                ax2.set_ylabel("Wind ($m.s^{-1}$)", color=color) #, fontsize=8
+                ax2.tick_params(axis='y', colors=color) #, labelsize=7
+            else:
+                ax2.tick_params(axis='y', colors=color, labelleft=False, labelright=False) #, labelsize=7
 
-        fig.text(0.5, 0.5, rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
+        fig.text(0.5, 0., rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
         fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
         fig.suptitle(main_title)
         fig.autofmt_xdate()

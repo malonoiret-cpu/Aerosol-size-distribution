@@ -54,7 +54,6 @@ def all_bin_size_by_four(bins):
 	if len(bins)%4 != 0:
 		nb_left_bins = len(bins)%4
 		last_range = [(bins[-nb_left_bins], bins[-nb_left_bins]), (bins[-nb_left_bins+1], bins[-nb_left_bins+1]), (bins[-nb_left_bins+2], bins[-nb_left_bins+2])]
-		print(last_range)
 		bin_ranges += [last_range]
 	return bin_ranges
 
