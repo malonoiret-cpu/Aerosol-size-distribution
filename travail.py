@@ -11,18 +11,19 @@ from ion_formation_rate3 import IonFormation as ifr
 start_w = '2019-12-01 00:00:00'
 end_w = '2020-03-20 00:00:00'
 
-npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
-                     ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
-                     ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
-                     ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
-                     ['2020-01-26 06:00:00', '2020-01-27 12:00:00'],
-                     ['2020-01-29 06:00:00', '2020-01-30 18:00:00'],
-                     ['2020-01-31 00:00:00', '2020-02-02 06:00:00'],
-                     ['2020-02-02 06:00:00', '2020-02-05 00:00:00'],
-                     ['2020-02-12 00:00:00', '2020-02-14 12:00:00'],
-                     ['2020-02-18 06:00:00', '2020-02-22 18:00:00'],
-                     ['2020-02-23 00:00:00', '2020-02-28 00:00:00']
-                     ]
+npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
+					['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
+					['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
+					['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
+					['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
+					['2020-01-26 06:00:00', '2020-01-27 12:00:00'],
+					['2020-01-29 06:00:00', '2020-01-30 18:00:00'],
+					['2020-01-31 00:00:00', '2020-02-02 06:00:00'],
+					['2020-02-02 06:00:00', '2020-02-05 00:00:00'],
+					['2020-02-12 00:00:00', '2020-02-14 12:00:00'],
+					['2020-02-18 06:00:00', '2020-02-22 18:00:00'],
+					['2020-02-23 00:00:00', '2020-02-28 00:00:00']
+					]
 
 npf_datetime_list_text1 = [['2019-12-02 00:00:00', '2019-12-06 00:00:00'],   #   Bergner et al. BSEs
 						  ['2019-12-07 00:00:00', '2019-12-10 00:00:00'],
@@ -35,13 +36,13 @@ npf_datetime_list_text1 = [['2019-12-02 00:00:00', '2019-12-06 00:00:00'],   #  
 npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text] # For plot_events
 
     # Physics settings
-temperature = None          # [K], if None, met_data considered, else considered as constant (298K was default)
-pressure = None             # [kPa], if None, met_data considered, else considered as constant (101.3 was default)
+temperature = 298          # [K], if None, met_data considered, else considered as constant (298K was default)
+pressure = 101.3             # [kPa], if None, met_data considered, else considered as constant (101.3 was default)
 
 dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = '2h'          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = None          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
@@ -127,13 +128,16 @@ res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min
 print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
-# res.plot_members(bin_ranges=bin_ranges, s = 'pos')
+wind = res.met_df['true_wind_velocity'].loc[start_ev:end_ev]
+Q_snow_pos = res.Q_snow_pos.loc[:,0.75]
+Q_snow_neg = res.Q_snow_neg.loc[:,0.75]
+wind_aligned = wind.reindex(Q_snow_pos.index)
 
-res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
+plt.figure()
+plt.scatter(wind_aligned, Q_snow_pos, alpha=0.4, s=10, label='pos')
+plt.scatter(wind_aligned, Q_snow_neg, color = 'red', alpha=0.4, s=10, label='neg')
+plt.xlabel('Wind speed (m/s)')
+plt.ylabel('Q_snow ($cm^{-3} s{-1})')
+plt.axhline(0, color='k', lw=0.5)
+plt.legend()
 plt.show()
-
-
-
-# for bin_ran in bin_all:
-# 	#res_w.plot_events(s = 'pos', bin_ranges=bin_ran, event_list=npf_datetime_list, commony=False)
-# 	res_w.plot_events(s = 'neg', bin_ranges=bin_ran, event_list=npf_datetime_list, commony=False)

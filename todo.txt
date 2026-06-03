@@ -98,9 +98,15 @@ Questions: 	- I sliced the NPF events manually. Papers state that it is when the
 				How should I define the NPF events then ???
 			- Are the data I have clean? There's some time stamp with very high values which compress the output plots. Are we expecting such a variability in the measurments?
 
+First meeting with Matt and Katy:
+	- The list of npf events should be given
+	- Make different plots for the different terms so we can see for which size bin they have more effect 
+	- Make scatter plot to see the effect of wind (and temperature?) on the production rate (for temperature thats the change over time that matters)
+	- Look at one summer event (21 of june) and compare the results
+	- Remove polluted events from the results
+	- Ions and pos/neg particles have a different meaning. Should change the names of the plots
 
 
-Savitzky-Golay filter 
 
 Size bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
         3.16,  3.65,  4.22,  4.87,  5.62,  6.49,   7.5,  8.66,  10.0, 11.55,

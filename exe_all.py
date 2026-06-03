@@ -14,18 +14,18 @@ start_w = '2019-12-01 00:00:00'     # winter time window
 end_w = '2020-03-01 00:00:00'
 
 # qualitatively determined blowing snow events
-npf_datetime_list_text = [['2019-12-02 14:00:00', '2019-12-06 04:00:00']]#, # B
-                    #  ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
-                    #  ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
-                    #  ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
-                    #  ['2020-01-26 06:00:00', '2020-01-27 12:00:00'],
-                    #  ['2020-01-29 06:00:00', '2020-01-30 18:00:00'],
-                    #  ['2020-01-31 00:00:00', '2020-02-02 06:00:00'],
-                    #  ['2020-02-02 06:00:00', '2020-02-05 00:00:00'],
-                    #  ['2020-02-12 00:00:00', '2020-02-14 12:00:00'],
-                    #  ['2020-02-18 06:00:00', '2020-02-22 18:00:00'],
-                    #  ['2020-02-23 00:00:00', '2020-02-28 00:00:00']
-                    #  ]
+npf_datetime_list_text = [['2019-12-02 18:00:00', '2019-12-06 04:00:00'], # B
+                        ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
+                        ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
+                        ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
+                        ['2020-01-26 06:00:00', '2020-01-27 12:00:00'],
+                        ['2020-01-29 06:00:00', '2020-01-30 18:00:00'],
+                        ['2020-01-31 00:00:00', '2020-02-02 06:00:00'],
+                        ['2020-02-02 06:00:00', '2020-02-05 00:00:00'],
+                        ['2020-02-12 00:00:00', '2020-02-14 12:00:00'],
+                        ['2020-02-18 06:00:00', '2020-02-22 18:00:00'],
+                        ['2020-02-23 00:00:00', '2020-02-28 00:00:00']
+                        ]
 
 npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text] # For plot_events
 
@@ -36,7 +36,7 @@ pressure = None             # [kPa], if None, met_data considered, else P consid
 dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = None          # '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = '2h'          # '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
@@ -156,19 +156,19 @@ for start, end in npf_datetime_list_text:
     plt.close()
 
     # plots for each size bins
-    event_dir_pb = os.path.join(event_dir, "per_bin") # Create a dedicated foler for per bin results
-    os.makedirs(event_dir_pb)
-    for bins in bin_all_by_four:
-         filename_pos = f"{bins[0][0]}_to_{bins[-1][-1]}_pos.png"
-         filename_neg = f"{bins[0][0]}_to_{bins[-1][-1]}_neg.png"
+    # event_dir_pb = os.path.join(event_dir, "per_bin") # Create a dedicated foler for per bin results
+    # os.makedirs(event_dir_pb)
+    # for bins in bin_all_by_four:
+    #      filename_pos = f"{bins[0][0]}_to_{bins[-1][-1]}_pos.png"
+    #      filename_neg = f"{bins[0][0]}_to_{bins[-1][-1]}_neg.png"
 
-         res.plot_members(bin_ranges=bins, s = 'pos', commony = sharey, logsc = ylogscale)
-         plt.savefig(os.path.join(event_dir_pb, filename_pos), dpi = qual, bbox_inches = 'tight')
-         plt.close()
+    #      res.plot_members(bin_ranges=bins, s = 'pos', commony = sharey, logsc = ylogscale)
+    #      plt.savefig(os.path.join(event_dir_pb, filename_pos), dpi = qual, bbox_inches = 'tight')
+    #      plt.close()
 
-         res.plot_members(bin_ranges=bins, s = 'neg', commony = sharey, logsc = ylogscale)
-         plt.savefig(os.path.join(event_dir_pb, filename_neg), dpi = qual, bbox_inches = 'tight')
-         plt.close()
+    #      res.plot_members(bin_ranges=bins, s = 'neg', commony = sharey, logsc = ylogscale)
+    #      plt.savefig(os.path.join(event_dir_pb, filename_neg), dpi = qual, bbox_inches = 'tight')
+    #      plt.close()
 
 
     print(f"{event_dir} done")
