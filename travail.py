@@ -8,8 +8,8 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-12-01 00:00:00'
-end_w = '2020-03-20 00:00:00'
+start_w = '2019-10-01 00:00:00'
+end_w = '2020-05-15 00:00:00'
 
 npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
 					['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
@@ -33,7 +33,34 @@ npf_datetime_list_text1 = [['2019-12-02 00:00:00', '2019-12-06 00:00:00'],   #  
 						  ['2020-02-12 00:00:00', '2020-02-16 00:00:00'],
 						  ['2020-02-18 00:00:00', '2020-02-22 00:00:00']]
 
-npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text] # For plot_events
+# npf_datetime_list_text2 = [['2019-10-28 08:00:00', '2019-10-28 12:30:00'],	# Matt's events
+# 						   ['2029-11-11 01:10:00', '2019-11-12 10:45:00'],
+# 						   ['2019-11-15 19:15:00', '2019-11-16 01:00:00'],
+# 						   ['2019-11-16 07:00:00', '2019-11-18 18:00:00'],	# polluted
+# 						   ['2019-11-23 11:00:00', '2019-11-25 07:00:00'],
+# 						   ['2019-12-02 15:30:00', '2019-12-06 01:00:00'],
+# 						   ['2019-12-07 21:35:00', '2019-12-08 18:00:00'],	# polluted at the start of the event
+# 						   ['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
+# 						   ['2020-01-01 08:00:00', '2020-01-03 01:00:00'],	# possibly polluted
+# 						   ['2020-01-03 19:10:00', '2020-01-04 04:00:00'],	# SMPS labelled as pollution, but it is more likely blowing snow
+# 						   ['2020-01-11 14:45:00', '2020-01-11 22:00:00'],	# a lot of pollution but with minimal influence?
+# 						   ['2020-01-15 05:30:00', '2020-01-15 16:55:00'],	# Obvious short lived pollution spikes
+# 						   ['2020-01-15 18:20:00', '2020-01-16 00:55:00'],	# Same as the previous one
+# 						   ['2020-01-16 01:55:00', '2020-01-16 09:45:00'],	# Pollution flagging in the NAIS, but no evidence in the SMPS
+# 						   ]
+
+# Import events from Matthew's notes
+pollution_remove = True
+df_events = pd.read_csv('Data/days-of-interest.csv', sep = ';')
+df_events['start'] = pd.to_datetime(df_events['start'], format='%d/%m/%Y %H:%M')
+df_events['end'] = pd.to_datetime(df_events['end'], format='%d/%m/%Y %H:%M')
+
+if pollution_remove == True:
+	df_events = df_events.loc[df_events['Pollution'] == False, :]
+print(df_events)
+
+bse_list = df_events[['start', 'end']].values.tolist()
+bse_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in bse_list] # For plot_events
 
     # Physics settings
 temperature = 298          # [K], if None, met_data considered, else considered as constant (298K was default)
@@ -70,7 +97,7 @@ bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 
 bin_ranges = [(0.75,  31.62), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]   # for grouped subplots
 bin_all = all_bin_size(bins)    # for unique bin subplots
-bin_all_by_four = all_bin_size_by_four(bins)
+bin_all = bin_all[0:18] + [(10., 31.62)]
 
 qual = 150              # Output plots quality
 sharey = False          # Share y-axis when subplotting (not on heat map)
@@ -128,16 +155,29 @@ res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min
 print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
-wind = res.met_df['true_wind_velocity'].loc[start_ev:end_ev]
-Q_snow_pos = res.Q_snow_pos.loc[:,0.75]
-Q_snow_neg = res.Q_snow_neg.loc[:,0.75]
-wind_aligned = wind.reindex(Q_snow_pos.index)
 
-plt.figure()
-plt.scatter(wind_aligned, Q_snow_pos, alpha=0.4, s=10, label='pos')
-plt.scatter(wind_aligned, Q_snow_neg, color = 'red', alpha=0.4, s=10, label='neg')
-plt.xlabel('Wind speed (m/s)')
-plt.ylabel('Q_snow ($cm^{-3} s{-1})')
-plt.axhline(0, color='k', lw=0.5)
-plt.legend()
+
+
+
+
+# res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], event_list= bse_datetime, commony=sharey)
+# res.plot_members(bin_ranges=bin_all, s= 'pos', commony=True)
+
 plt.show()
+
+
+
+
+# wind = res_w.met_df['true_wind_velocity'].loc[start_w:end_w]
+# Q_snow_pos = res_w.Q_snow_pos.loc[:,0.75]
+# Q_snow_neg = res_w.Q_snow_neg.loc[:,0.75]
+# wind_aligned = wind.reindex(Q_snow_pos.index)
+
+# plt.figure()
+# plt.scatter(wind_aligned, Q_snow_pos, alpha=0.4, s=10, label='pos')
+# # plt.scatter(wind_aligned, Q_snow_neg, color = 'red', alpha=0.4, s=10, label='neg')
+# plt.xlabel('Wind speed (m/s)')
+# plt.ylabel('Q_snow ($cm^{-3} s{-1})')
+# plt.axhline(0, color='k', lw=0.5)
+# plt.legend()
+# plt.show()

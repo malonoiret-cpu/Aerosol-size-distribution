@@ -52,11 +52,8 @@ todo
 
 
 what's needed : 
+	- add a tag for each time stamp to say if it's an event and if the's pollution, to show it on scatter plots
 	- consider calculating the importance of the members by ratio (ie Q_snow / member term)
-	- should maybe plot_member for all size bins to see if some are behaving differently
-	- improve layout for hm_plot
-	- calculate the growth rate:
-		The growth rate can not be calculated for the whole time period, it needs to be calculated for each BSE. For the GR to be valid, the particle size needs to grow monotically.
 	- should exe_all.py store results in csv?
 
 
@@ -99,7 +96,7 @@ Questions: 	- I sliced the NPF events manually. Papers state that it is when the
 			- Are the data I have clean? There's some time stamp with very high values which compress the output plots. Are we expecting such a variability in the measurments?
 
 First meeting with Matt and Katy:
-	- The list of npf events should be given
+	- The list of npf events should be given -> done
 	- Make different plots for the different terms so we can see for which size bin they have more effect 
 	- Make scatter plot to see the effect of wind (and temperature?) on the production rate (for temperature thats the change over time that matters)
 	- Look at one summer event (21 of june) and compare the results

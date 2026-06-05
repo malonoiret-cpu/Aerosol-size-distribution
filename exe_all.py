@@ -10,24 +10,20 @@ import shutil
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-12-01 00:00:00'     # winter time window
-end_w = '2020-03-01 00:00:00'
+start_w = '2019-10-01 00:00:00'     # winter time window
+end_w = '2020-05-15 00:00:00'
 
-# qualitatively determined blowing snow events
-npf_datetime_list_text = [['2019-12-02 18:00:00', '2019-12-06 04:00:00'], # B
-                        ['2019-12-15 06:00:00', '2019-12-17 12:00:00'],
-                        ['2019-12-31 12:00:00', '2020-01-03 06:00:00'],
-                        ['2020-01-10 00:00:00', '2020-01-18 06:00:00'],
-                        ['2020-01-26 06:00:00', '2020-01-27 12:00:00'],
-                        ['2020-01-29 06:00:00', '2020-01-30 18:00:00'],
-                        ['2020-01-31 00:00:00', '2020-02-02 06:00:00'],
-                        ['2020-02-02 06:00:00', '2020-02-05 00:00:00'],
-                        ['2020-02-12 00:00:00', '2020-02-14 12:00:00'],
-                        ['2020-02-18 06:00:00', '2020-02-22 18:00:00'],
-                        ['2020-02-23 00:00:00', '2020-02-28 00:00:00']
-                        ]
+# Import events from Matthew's notes
+pollution_remove = True
+df_events = pd.read_csv('Data/days-of-interest.csv', sep = ';')
+df_events['start'] = pd.to_datetime(df_events['start'], format='%d/%m/%Y %H:%M')
+df_events['end'] = pd.to_datetime(df_events['end'], format='%d/%m/%Y %H:%M')
 
-npf_datetime_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text] # For plot_events
+if pollution_remove == True:
+	df_events = df_events.loc[df_events['Pollution'] == False, :]
+
+bse_list = df_events[['start', 'end']].values.tolist()  # Create the list with start and end times of bses
+bse_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in bse_list] # For plot_events
 
     # Physics settings
 temperature = None          # [K], if None, met_data considered, else T considered as constant (298K was default)
@@ -36,11 +32,11 @@ pressure = None             # [kPa], if None, met_data considered, else P consid
 dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = '2h'          # '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = None          # '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
-def all_bin_size_by_four(bins):
+def all_bin_size_by_four(bins): # not so usefull
 	"""Make a list with all size bins suitable for plot functions"""
 	bin_ranges = []
 	for i in range(4, len(bins), 4):
@@ -65,6 +61,7 @@ bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 bin_ranges = [(.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]   # for grouped subplots
 bin_all_by_four = all_bin_size_by_four(bins)    # for unique bin subplots (four bins per figure)
 bin_all = all_bin_size(bins)
+bin_all = bin_all[0:18] + [(10., 31.62)]
 
 sharey = False       # Share y-axis when subplotting (not on heat map)
 ylogscale = False   # log scale on y-axis
@@ -94,7 +91,7 @@ if os.path.exists(results_dir):
     shutil.rmtree(results_dir)
 # ---- compute results for each npf event -------------
 res_dic = {} # Not used so far
-for start, end in npf_datetime_list_text:
+for start, end in bse_list:
 
     # Slice datasets over a blowing snow event
     nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start:end]
@@ -154,6 +151,10 @@ for start, end in npf_datetime_list_text:
     res.plot_members(bin_ranges=bin_all, s = 'neg', commony = True, logsc = ylogscale)
     plt.savefig(os.path.join(event_dir, "members_all_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
+	
+    note = df_events.loc[df_events['start'] == start, 'notes'].values[0]
+    with open(os.path.join(event_dir, "notes.txt"), 'w') as f:
+        f.write(str(note))
 
     # plots for each size bins
     # event_dir_pb = os.path.join(event_dir, "per_bin") # Create a dedicated foler for per bin results
@@ -190,19 +191,19 @@ res_w = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10m
 print("\t Results computed in the instance res_w")
 
 print("Saving the plots...")
-res_w.plot_events(s='pos', bin_ranges= bin_ranges, event_list= npf_datetime_list, commony=sharey)
+res_w.plot_events(s='pos', bin_ranges= bin_ranges, event_list= bse_datetime, commony=sharey)
 plt.savefig(os.path.join(results_dir, "pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
 plt.close()
 
-res_w.plot_events(s='neg', bin_ranges= bin_ranges, event_list= npf_datetime_list, commony=sharey)
+res_w.plot_events(s='neg', bin_ranges= bin_ranges, event_list= bse_datetime, commony=sharey)
 plt.savefig(os.path.join(results_dir, "neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
 plt.close()
 
-res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], event_list= npf_datetime_list, commony=sharey)
+res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], event_list= bse_datetime, commony=sharey)
 plt.savefig(os.path.join(results_dir, "all_pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
 plt.close()
 
-res_w.plot_events(s='neg', bin_ranges= [[dia_min,dia_max]], event_list= npf_datetime_list, commony=sharey)
+res_w.plot_events(s='neg', bin_ranges= [[dia_min,dia_max]], event_list= bse_datetime, commony=sharey)
 plt.savefig(os.path.join(results_dir, "all_neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
 plt.close()
 print(f"Global period plot are saved in {results_dir}")
