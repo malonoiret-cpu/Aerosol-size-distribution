@@ -10,8 +10,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import itertools
 
 class IonFormation:
-    def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, met_df: pd.DataFrame, low_dia=None, high_dia=None,   \
-			  		pressure = None, temperature = None, alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183,                                 \
+    def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, met_df: pd.DataFrame, df_events : pd.DataFrame = None,       \
+			  		low_dia=None, high_dia=None, pressure = None, temperature = None, alpha = 1.6e-6, chi = 0.01e-6, rho = 0.00183,             \
                     diff_order: int = 2, smooth_window = None):
         # define constants
         self.BOLTZMANN = 1.380658e-23 	# [m**2 kg/s**2 K]
@@ -136,6 +136,10 @@ class IonFormation:
             ratio = neg / pos
             ratio = ratio.where(pos.abs() >= threshold, other=np.nan)  # mask near-zero denominators
             self.dic_ratio[name] = ratio
+        
+        # ---- event tags --------------
+        self.df_events = df_events
+        self.event_tags = self.tag_events()
 
 
     def N_smaller(self, psd):
@@ -175,6 +179,20 @@ class IonFormation:
             raise ValueError("order must be 2, 3, or 5")
 
         return pd.DataFrame(dN / dt, index=idx, columns=df.columns)
+
+    def tag_events(self):
+        """Gives a tag for each time stamps (based on Q_snow_pos index) as follow:
+            - NaN: no event
+            - event: during an event without pollution
+            - event_poll: during an event qualified as polluted"""
+        tags = pd.Series(np.nan, index=self.Q_snow_pos.index, dtype=object)
+
+        for _, row in self.df_events.iterrows():
+            mask = (tags.index >= row['start']) & (tags.index <= row['end'])
+            label = 'event_poll' if row['Pollution'] else 'event'
+            tags[mask] = label
+        
+        return tags
 
     def mean_free_path_calc(self, T, P):
         """Compute the mean free path from the reference (at T = 296.15 [K], P = 101.3 [kPa]; MFP_REF = 6.730e-8 [m])
@@ -518,3 +536,48 @@ class IonFormation:
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
+
+    def scatter_values(self, s = 'pos', x_data : Literal['wind', 'temp'] = 'wind', bin_ranges = [(0.75, 31.62)], commony : bool = False):
+        
+        if x_data == 'wind':
+            xvalues_raw = self.met_df['true_wind_velocity']
+        elif x_data == 'temp':
+            xvalues_raw = self.met_df['air_temperature']
+
+        if s=='pos':
+            Q_snow = self.Q_snow_pos
+        elif s=='neg': Q_snow = self.Q_snow_neg
+
+        x_values = xvalues_raw.reindex(Q_snow.index)
+        
+        # compute the masks according to the event type
+        mask_event = self.event_tags == 'event'
+        mask_poll = self.event_tags == 'event_poll'
+        mask_ras = self.event_tags.isna()
+
+        nplots = len(bin_ranges)                #
+        ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
+        nrow = int(np.ceil(nplots / ncol))      #
+
+        fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*6,nrow*4), sharex= True, sharey=commony, squeeze=False)
+
+        for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
+            
+            # I could maybe sum once and then mask in scatter
+            ax.scatter(x_values[mask_ras], Q_snow.loc[mask_ras, bin_low:bin_high].sum(axis = 1), color = 'grey', alpha=0.4, s=10, label='no event')
+            ax.scatter(x_values[mask_poll], Q_snow.loc[mask_poll, bin_low:bin_high].sum(axis = 1), color = 'tomato', alpha=0.6, s=15, label='polluted event')
+            ax.scatter(x_values[mask_event], Q_snow.loc[mask_event, bin_low:bin_high].sum(axis = 1), color = 'blue', alpha=1, s=15, label='event')
+
+            col = idx%ncol  # column index for plotting columns
+            if col == 0:
+                ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
+            if idx >= ncol * (nrow - 1):
+                xlab = f"Wind velocity ($m\cdot s^{{-1}}$)" if x_data == 'wind' else f"Temperature (°C)"
+                ax.set_xlabel(xlab)
+            ax.grid()
+            subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
+            ax.set_title(subtitle)
+            lines, labels = ax.get_legend_handles_labels()
+        
+        fig.legend(lines, labels, loc = "upper center", ncol=3)
+        

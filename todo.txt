@@ -55,7 +55,8 @@ what's needed :
 	- add a tag for each time stamp to say if it's an event and if the's pollution, to show it on scatter plots
 	- consider calculating the importance of the members by ratio (ie Q_snow / member term)
 	- should exe_all.py store results in csv?
-
+	- improve plot_events so we can see the plluted and not polluted events. Improve labelling as well (if labelling is necessary)
+	- show on every plots (in title for exemple, if the event is polluted or not)
 
 
 Answers to first discussion:
@@ -94,6 +95,7 @@ Questions: 	- I sliced the NPF events manually. Papers state that it is when the
 				When looking at concentrations for each concentration, we see that the peaks happen at different times, often out of the chosen NPF
 				How should I define the NPF events then ???
 			- Are the data I have clean? There's some time stamp with very high values which compress the output plots. Are we expecting such a variability in the measurments?
+			- Think of a filter to remove crazy high values overall (they are not all qualified as polluted)
 
 First meeting with Matt and Katy:
 	- The list of npf events should be given -> done

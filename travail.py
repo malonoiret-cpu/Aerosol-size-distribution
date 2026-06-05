@@ -50,14 +50,13 @@ npf_datetime_list_text1 = [['2019-12-02 00:00:00', '2019-12-06 00:00:00'],   #  
 # 						   ]
 
 # Import events from Matthew's notes
-pollution_remove = True
+pollution_remove = False			# if false, do not consider polluted events as events
 df_events = pd.read_csv('Data/days-of-interest.csv', sep = ';')
 df_events['start'] = pd.to_datetime(df_events['start'], format='%d/%m/%Y %H:%M')
 df_events['end'] = pd.to_datetime(df_events['end'], format='%d/%m/%Y %H:%M')
 
 if pollution_remove == True:
 	df_events = df_events.loc[df_events['Pollution'] == False, :]
-print(df_events)
 
 bse_list = df_events[['start', 'end']].values.tolist()
 bse_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in bse_list] # For plot_events
@@ -132,15 +131,15 @@ nais_ion_pos_10min_w = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
 met_10min_w = data_dic['met'].loc[start_w:end_w]
 print("\t Data loaded, computing the results...")
 
-res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w,
+res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
 			diff_order=diff_order, smooth_window=roll_period)
 print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
-event_number = 0
-event_dates = npf_datetime_list_text[event_number]
+event_number = 35
+event_dates = bse_datetime[event_number]
 start_ev = event_dates[0]
 end_ev = event_dates[1]
 
@@ -149,33 +148,35 @@ nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
 nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
 met_10min = data_dic['met'].loc[start_ev:end_ev]
 
-res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min,
+res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
 			diff_order=diff_order, smooth_window=roll_period)
 print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
 
-
-
-
-
 # res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], event_list= bse_datetime, commony=sharey)
 # res.plot_members(bin_ranges=bin_all, s= 'pos', commony=True)
 
+# plt.show()
+
+
+res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, commony=False)
 plt.show()
 
-
-
-
 # wind = res_w.met_df['true_wind_velocity'].loc[start_w:end_w]
-# Q_snow_pos = res_w.Q_snow_pos.loc[:,0.75]
+# Q_snow_pos = res_w.Q_snow_pos.loc[:,0.75:31.62].sum(axis=1)
 # Q_snow_neg = res_w.Q_snow_neg.loc[:,0.75]
 # wind_aligned = wind.reindex(Q_snow_pos.index)
 
+# mask_event = res_w.event_tags == 'event'
+# mask_poll = res_w.event_tags == 'event_poll'
+# mask_ras = res_w.event_tags.isna()
+
 # plt.figure()
-# plt.scatter(wind_aligned, Q_snow_pos, alpha=0.4, s=10, label='pos')
-# # plt.scatter(wind_aligned, Q_snow_neg, color = 'red', alpha=0.4, s=10, label='neg')
+# plt.scatter(wind_aligned[mask_ras], Q_snow_pos[mask_ras], color = 'grey', alpha=0.4, s=10, label='no event')
+# # plt.scatter(wind_aligned[mask_poll], Q_snow_pos[mask_poll], color = 'tomato', alpha=0.6, s=15, label='pollution')
+# plt.scatter(wind_aligned[mask_event], Q_snow_pos[mask_event], color = 'blue', alpha=1, s=15, label='event')
 # plt.xlabel('Wind speed (m/s)')
 # plt.ylabel('Q_snow ($cm^{-3} s{-1})')
 # plt.axhline(0, color='k', lw=0.5)

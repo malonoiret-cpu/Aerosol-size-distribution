@@ -99,7 +99,7 @@ for start, end in bse_list:
     nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end]
     met_10min = data_dic['met'].loc[start:end]
 
-    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df = met_10min,
+    res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_df = met_10min, df_events=df_events,
               low_dia = dia_min, high_dia = dia_max, temperature=temperature, pressure=pressure,
               diff_order=diff_order, smooth_window=roll_period)
 
@@ -185,7 +185,7 @@ nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
 met_10min = data_dic['met'].loc[start_w:end_w]
 print("\t Data loaded, computing the results...")
 
-res_w = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min,
+res_w = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
             low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
             diff_order=diff_order, smooth_window=roll_period)
 print("\t Results computed in the instance res_w")
