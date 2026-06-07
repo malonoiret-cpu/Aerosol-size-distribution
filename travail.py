@@ -52,8 +52,8 @@ npf_datetime_list_text1 = [['2019-12-02 00:00:00', '2019-12-06 00:00:00'],   #  
 # Import events from Matthew's notes
 pollution_remove = False			# if false, do not consider polluted events as events
 df_events = pd.read_csv('Data/days-of-interest.csv', sep = ';')
-df_events['start'] = pd.to_datetime(df_events['start'], format='%d/%m/%Y %H:%M')
-df_events['end'] = pd.to_datetime(df_events['end'], format='%d/%m/%Y %H:%M')
+df_events['start'] = pd.to_datetime(df_events['start'], format='ISO8601')
+df_events['end'] = pd.to_datetime(df_events['end'], format='ISO8601')
 
 if pollution_remove == True:
 	df_events = df_events.loc[df_events['Pollution'] == False, :]
@@ -159,26 +159,9 @@ print("The instance containing the result has been created (res)")
 # res.plot_members(bin_ranges=bin_all, s= 'pos', commony=True)
 
 # plt.show()
-
-
-res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, commony=False)
+print(df_events)
+s='neg'
+# res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, commony=False)
+res_w.scatter_values(s, x_data='dtemp', bin_ranges=bin_all, commony=False)
+res_w.plot_members(bin_ranges=bin_ranges, s = s, commony=False)
 plt.show()
-
-# wind = res_w.met_df['true_wind_velocity'].loc[start_w:end_w]
-# Q_snow_pos = res_w.Q_snow_pos.loc[:,0.75:31.62].sum(axis=1)
-# Q_snow_neg = res_w.Q_snow_neg.loc[:,0.75]
-# wind_aligned = wind.reindex(Q_snow_pos.index)
-
-# mask_event = res_w.event_tags == 'event'
-# mask_poll = res_w.event_tags == 'event_poll'
-# mask_ras = res_w.event_tags.isna()
-
-# plt.figure()
-# plt.scatter(wind_aligned[mask_ras], Q_snow_pos[mask_ras], color = 'grey', alpha=0.4, s=10, label='no event')
-# # plt.scatter(wind_aligned[mask_poll], Q_snow_pos[mask_poll], color = 'tomato', alpha=0.6, s=15, label='pollution')
-# plt.scatter(wind_aligned[mask_event], Q_snow_pos[mask_event], color = 'blue', alpha=1, s=15, label='event')
-# plt.xlabel('Wind speed (m/s)')
-# plt.ylabel('Q_snow ($cm^{-3} s{-1})')
-# plt.axhline(0, color='k', lw=0.5)
-# plt.legend()
-# plt.show()

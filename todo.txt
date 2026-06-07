@@ -57,6 +57,7 @@ what's needed :
 	- should exe_all.py store results in csv?
 	- improve plot_events so we can see the plluted and not polluted events. Improve labelling as well (if labelling is necessary)
 	- show on every plots (in title for exemple, if the event is polluted or not)
+	- check mass defect plot?
 
 
 Answers to first discussion:

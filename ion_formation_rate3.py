@@ -537,16 +537,28 @@ class IonFormation:
         fig.autofmt_xdate()
         plt.tight_layout()
 
-    def scatter_values(self, s = 'pos', x_data : Literal['wind', 'temp'] = 'wind', bin_ranges = [(0.75, 31.62)], commony : bool = False):
+    def scatter_values(self, s = 'pos', x_data : Literal['wind', 'temperature', 'dtemp'] = 'wind',
+                       bin_ranges = [(0.75, 31.62)], commony : bool = False,
+                       ras: bool = False, pollution: bool = False):
         
         if x_data == 'wind':
             xvalues_raw = self.met_df['true_wind_velocity']
-        elif x_data == 'temp':
+            xlab = f"Wind velocity ($m\\cdot s^{{-1}}$)"
+        elif x_data == 'temperature':
             xvalues_raw = self.met_df['air_temperature']
-
+            xlab = f"Temperature (°C)"
+        elif x_data == 'dtemp':
+            dtemp = self._diff(self.met_df[['air_temperature', 'air_pressure']])
+            xvalues_raw = dtemp['air_temperature'] * 6  # Multiply by 6 to have °C/h
+            xlab = f"dT / dt (°C $\\cdot h^{{-1}}$)"
+        
         if s=='pos':
             Q_snow = self.Q_snow_pos
-        elif s=='neg': Q_snow = self.Q_snow_neg
+            suptitle = "Positive ions"
+        elif s=='neg':
+            Q_snow = self.Q_snow_neg
+            suptitle = "Negative Ions"
+        else : raise ValueError("s must be 'pos' or 'neg'")
 
         x_values = xvalues_raw.reindex(Q_snow.index)
         
@@ -564,20 +576,21 @@ class IonFormation:
         for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
             
             # I could maybe sum once and then mask in scatter
-            ax.scatter(x_values[mask_ras], Q_snow.loc[mask_ras, bin_low:bin_high].sum(axis = 1), color = 'grey', alpha=0.4, s=10, label='no event')
-            ax.scatter(x_values[mask_poll], Q_snow.loc[mask_poll, bin_low:bin_high].sum(axis = 1), color = 'tomato', alpha=0.6, s=15, label='polluted event')
-            ax.scatter(x_values[mask_event], Q_snow.loc[mask_event, bin_low:bin_high].sum(axis = 1), color = 'blue', alpha=1, s=15, label='event')
+            if ras == True:
+                ax.scatter(x_values[mask_ras], Q_snow.loc[mask_ras, bin_low:bin_high].sum(axis = 1), color = 'grey', alpha=0.4, s=10, label='no event')
+            if pollution == True:
+                ax.scatter(x_values[mask_poll], Q_snow.loc[mask_poll, bin_low:bin_high].sum(axis = 1), color = 'tomato', alpha=0.6, s=15, label='polluted event')
+            ax.scatter(x_values[mask_event], Q_snow.loc[mask_event, bin_low:bin_high].sum(axis = 1), color = 'blue', alpha=.8, s=15, label='event')
 
             col = idx%ncol  # column index for plotting columns
             if col == 0:
                 ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
             if idx >= ncol * (nrow - 1):
-                xlab = f"Wind velocity ($m\cdot s^{{-1}}$)" if x_data == 'wind' else f"Temperature (°C)"
                 ax.set_xlabel(xlab)
             ax.grid()
             subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
             ax.set_title(subtitle)
             lines, labels = ax.get_legend_handles_labels()
-        
-        fig.legend(lines, labels, loc = "upper center", ncol=3)
+        fig.suptitle(suptitle)
+        fig.legend(lines, labels, loc = "upper right", ncol=3)
         
