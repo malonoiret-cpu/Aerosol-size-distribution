@@ -55,9 +55,11 @@ what's needed :
 	- add a tag for each time stamp to say if it's an event and if the's pollution, to show it on scatter plots
 	- consider calculating the importance of the members by ratio (ie Q_snow / member term)
 	- should exe_all.py store results in csv?
-	- improve plot_events so we can see the plluted and not polluted events. Improve labelling as well (if labelling is necessary)
+	- improve plot_events so we can see the polluted and not polluted events. Improve labelling as well (if labelling is necessary)
 	- show on every plots (in title for exemple, if the event is polluted or not)
-	- check mass defect plot?
+	- check mass defect plot??
+	- scatter plot with (d)temperature and wind visible
+
 
 
 Answers to first discussion:
@@ -65,36 +67,28 @@ Answers to first discussion:
 
 	- do not rollmean the data before computing Q_snow
 		-> done
-
 	- ratio pos/neg
 		-> done. Although, I cut of the low dividers values (<1), so we can see something on the graph. Should consider that 
-	
 	- met: when studying an event, compute and show mean temperature, wind and other useful quantities
 		->
-
 	- Consider T and P in CoagL
 		-> done. The result is that the effect of CoagL decrease a bit, but it doesn't change a lot the interpretation of the results.
-
 	- from which bin size is the production rate led by something else than dN/dt
 		-> I changed plot_members so it plots for 4 different size-bin ranges:
 		- Up to 0.87 nm, the production rate behave the same way
 		- From 0.87 to ..., they behave a bit differently but are also clearly driven by the CoagL
 		- From 10. (8.66) nm, the production rate seem to be clearly driven by dN/dt
-
 		-> I plotted the concentration over the whole winter for each size bins.
 			- The small aerosols (from 0.75 nm to 1.33/1.54 nm) behave differently than the others. Their concentraion peaks are out of the events.
 			- The bigger aerosols (from 20.54 nm) Also behave a bit differently. They still have peaks during NFP, but show other peaks
 			- same for neg and pos
-
 		-> for sub nm particles, the negative ion production rate seems to be higher than the positive
 
 
 
 Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
 				-> do we have the data ?
-			- I sliced the NPF looking at the total concentration (all size bins).
-				When looking at concentrations for each concentration, we see that the peaks happen at different times, often out of the chosen NPF
-				How should I define the NPF events then ???
+			- some pikes for small ions concentraion seem to happen out of the events
 			- Are the data I have clean? There's some time stamp with very high values which compress the output plots. Are we expecting such a variability in the measurments?
 			- Think of a filter to remove crazy high values overall (they are not all qualified as polluted)
 

@@ -184,13 +184,15 @@ class IonFormation:
         """Gives a tag for each time stamps (based on Q_snow_pos index) as follow:
             - NaN: no event
             - event: during an event without pollution
-            - event_poll: during an event qualified as polluted"""
+            - event_poll: during an event qualified as polluted
+        If no events are given, no labels are applied."""
         tags = pd.Series(np.nan, index=self.Q_snow_pos.index, dtype=object)
 
-        for _, row in self.df_events.iterrows():
-            mask = (tags.index >= row['start']) & (tags.index <= row['end'])
-            label = 'event_poll' if row['Pollution'] else 'event'
-            tags[mask] = label
+        if self.df_events is not None:
+            for _, row in self.df_events.iterrows():
+                mask = (tags.index >= row['start']) & (tags.index <= row['end'])
+                label = 'event_poll' if row['Pollution'] else 'event'
+                tags[mask] = label
         
         return tags
 
@@ -575,12 +577,12 @@ class IonFormation:
 
         for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
             
-            # I could maybe sum once and then mask in scatter
+            Q_snow_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis = 1)
             if ras == True:
-                ax.scatter(x_values[mask_ras], Q_snow.loc[mask_ras, bin_low:bin_high].sum(axis = 1), color = 'grey', alpha=0.4, s=10, label='no event')
+                ax.scatter(x_values[mask_ras], Q_snow_sum[mask_ras], color = 'grey', alpha=0.4, s=10, label='no event')
             if pollution == True:
-                ax.scatter(x_values[mask_poll], Q_snow.loc[mask_poll, bin_low:bin_high].sum(axis = 1), color = 'tomato', alpha=0.6, s=15, label='polluted event')
-            ax.scatter(x_values[mask_event], Q_snow.loc[mask_event, bin_low:bin_high].sum(axis = 1), color = 'blue', alpha=.8, s=15, label='event')
+                ax.scatter(x_values[mask_poll], Q_snow_sum[mask_poll], color = 'tomato', alpha=0.6, s=15, label='polluted event')
+            ax.scatter(x_values[mask_event], Q_snow_sum[mask_event], color = 'blue', alpha=.8, s=15, label='event')
 
             col = idx%ncol  # column index for plotting columns
             if col == 0:
@@ -592,5 +594,5 @@ class IonFormation:
             ax.set_title(subtitle)
             lines, labels = ax.get_legend_handles_labels()
         fig.suptitle(suptitle)
-        fig.legend(lines, labels, loc = "upper right", ncol=3)
+        fig.legend(lines, labels, loc = "upper center", ncol=3)
         
