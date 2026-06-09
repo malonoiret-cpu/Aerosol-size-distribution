@@ -59,12 +59,13 @@ what's needed :
 	- show on every plots (in title for exemple, if the event is polluted or not)
 	- check mass defect plot??
 	- scatter plot with (d)temperature and wind visible
+	- Think of a filter to remove crazy high values overall (they are not all qualified as polluted)
 
 
 
 Answers to first discussion:
 	- study one summer event
-
+		->
 	- do not rollmean the data before computing Q_snow
 		-> done
 	- ratio pos/neg
@@ -84,13 +85,13 @@ Answers to first discussion:
 			- same for neg and pos
 		-> for sub nm particles, the negative ion production rate seems to be higher than the positive
 
+Answer to second discussion:
+	- redefine "seasons" using the solar radiation data. Over seasons, we're more interested in the difference between no radiation or radiation.
+	- compute growth rate when possible
 
 
-Questions: 	- I sliced the NPF events manually. Papers state that it is when the snow drift density at 0.1 m above ground must exceed 10e-5 kg m-3, but we don't have the Data
-				-> do we have the data ?
-			- some pikes for small ions concentraion seem to happen out of the events
+Questions: 	- some pikes for small ions concentraion seem to happen out of the events
 			- Are the data I have clean? There's some time stamp with very high values which compress the output plots. Are we expecting such a variability in the measurments?
-			- Think of a filter to remove crazy high values overall (they are not all qualified as polluted)
 
 First meeting with Matt and Katy:
 	- The list of npf events should be given -> done
