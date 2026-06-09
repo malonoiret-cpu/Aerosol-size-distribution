@@ -595,4 +595,5 @@ class IonFormation:
             lines, labels = ax.get_legend_handles_labels()
         fig.suptitle(suptitle)
         fig.legend(lines, labels, loc = "upper center", ncol=3)
+        plt.tight_layout()
         

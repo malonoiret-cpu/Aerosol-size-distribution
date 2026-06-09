@@ -14,15 +14,12 @@ start_w = '2020-06-01 00:00:00'
 end_w = '2020-07-01 00:00:00'
 
 # Import events from Matthew's notes
-pollution_remove = True
 df_events = pd.read_csv('Data/days-of-interest_summer.csv', sep = ';')
 df_events['start'] = pd.to_datetime(df_events['start'], dayfirst=True)
 df_events['end'] = pd.to_datetime(df_events['end'], dayfirst=True)
 
 npf_list = df_events[['start', 'end']].values.tolist()  # Create the list with start and end times of bses
 npf_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_list] # For plot_events
-# npf_datetime_list_text = [['2020-06-21 03:00:00', '2020-06-21 23:00:00']]
-# npf_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in npf_datetime_list_text] # For plot_events
 
     # Physics settings
 temperature = None          # [K], if None, met_data considered, else considered as constant (298K was default)
@@ -133,11 +130,11 @@ for start, end in npf_list:
     plt.savefig(os.path.join(event_dir, "conc_hm_ratio.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 	
-    res.plot_members(bin_ranges=bin_all, s = 'pos', commony = False, logsc = ylogscale)
+    res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
     plt.savefig(os.path.join(event_dir, "members_all_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 	
-    res.plot_members(bin_ranges=bin_all, s = 'neg', commony = False, logsc = ylogscale)
+    res.plot_members(bin_ranges=bin_all, s = 'neg', commony = True, logsc = ylogscale)
     plt.savefig(os.path.join(event_dir, "members_all_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 

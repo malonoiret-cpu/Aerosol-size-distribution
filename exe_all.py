@@ -10,11 +10,11 @@ import shutil
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-11-01 00:00:00'     # winter time window
-end_w = '2020-03-15 00:00:00'
+start_w = '2019-10-01 00:00:00'     # winter time window
+end_w = '2020-05-15 00:00:00'
 
 # Import events from Matthew's notes
-pollution_remove = True
+pollution_remove = False
 df_events = pd.read_csv('Data/days-of-interest.csv', sep = ';')
 df_events['start'] = pd.to_datetime(df_events['start'], format='ISO8601')
 df_events['end'] = pd.to_datetime(df_events['end'], format='ISO8601')
@@ -36,32 +36,14 @@ roll_period = None          # '2h', if not None, apply a rolling median over the
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
-def all_bin_size_by_four(bins): # not so usefull
-	"""Make a list with all size bins suitable for plot functions"""
-	bin_ranges = []
-	for i in range(4, len(bins), 4):
-		ranges  = [(bins[i-4], bins[i-4]), (bins[i-3], bins[i-3]), (bins[i-2], bins[i-2]), (bins[i-1], bins[i-1])]
-		bin_ranges += [ranges]
-	if len(bins)%4 != 0:
-		nb_left_bins = len(bins)%4
-		last_range = [(bins[-nb_left_bins], bins[-nb_left_bins]), (bins[-nb_left_bins+1], bins[-nb_left_bins+1]), (bins[-nb_left_bins+2], bins[-nb_left_bins+2])]
-		bin_ranges += [last_range]
-	return bin_ranges
-
-def all_bin_size(bins):
-	bin_ranges = []
-	for size in bins:
-		bin_ranges.append((size, size))
-	return bin_ranges
-
 bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 		3.16,  3.65,  4.22,  4.87,  5.62,  6.49,   7.5,  8.66,  10.0, 11.55,
 		13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
 
+bin_all = [(size, size) for size in bins]
+bin_all = bin_all[0:18] + [(10., 31.62)]    # Group the bigger ones which give the same results for clearer plot
+
 bin_ranges = [(.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]   # for grouped subplots
-bin_all_by_four = all_bin_size_by_four(bins)    # for unique bin subplots (four bins per figure)
-bin_all = all_bin_size(bins)
-bin_all = bin_all[0:18] + [(10., 31.62)]
 
 sharey = False       # Share y-axis when subplotting (not on heat map)
 ylogscale = False   # log scale on y-axis

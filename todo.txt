@@ -96,8 +96,11 @@ First meeting with Matt and Katy:
 	- The list of npf events should be given -> done
 	- Make different plots for the different terms so we can see for which size bin they have more effect 
 	- Make scatter plot to see the effect of wind (and temperature?) on the production rate (for temperature thats the change over time that matters)
+		-> done, apparently nothing to understand from it?
 	- Look at one summer event (21 of june) and compare the results
+		-> done
 	- Remove polluted events from the results
+		-> done, they are now taged correctly.
 	- Ions and pos/neg particles have a different meaning. Should change the names of the plots
 
 
