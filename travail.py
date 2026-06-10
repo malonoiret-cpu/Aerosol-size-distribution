@@ -9,7 +9,7 @@ from ion_formation_rate3 import IonFormation as ifr
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
 start_w = '2019-10-01 00:00:00'
-end_w = '2020-05-15 00:00:00'
+end_w = '2020-10-01 00:00:00'
 
 npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
 					['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
@@ -125,11 +125,30 @@ print("The data have been loaded \n \t Computing the results...")
 
 #%% ---- Load datasets and comput results for the whole winter -----------------------------------------------------------------------
 # Slice over the whole period considered
-# smps = data_dic['smps'].loc[start:end]								# Not used !!!
+# smps_10min_win = data_dic['smps'].loc[start_w:end_w]								# Not used !!!
 nais_part_pos_10min_w = data_dic['nais_part_pos_file'].loc[start_w:end_w]
 nais_ion_neg_10min_w = data_dic['nais_ion_neg_file'].loc[start_w:end_w]
 nais_ion_pos_10min_w = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
 met_10min_w = data_dic['met'].loc[start_w:end_w]
+
+# Cut of the weird values
+def remove_spikes(df, window='1h', threshold=3):
+    """Replace values deviating more than threshold * local_std from the rolling median with NaN"""
+    row_sum = df.sum(axis=1)
+    rolling_med = row_sum.rolling(window=window, center=True, min_periods=1).median()
+    rolling_std = row_sum.rolling(window=window, center=True, min_periods=1).std()
+    outlier_mask = (row_sum - rolling_med).abs() > threshold * rolling_std
+    outlier_mask_2d = pd.DataFrame(
+        np.tile(outlier_mask.values[:, None], (1, df.shape[1])),
+        index=df.index,
+        columns=df.columns
+    )
+    return df.where(~outlier_mask_2d, other=np.nan)
+
+nais_part_pos_10min_w = remove_spikes(nais_part_pos_10min_w)
+nais_ion_neg_10min_w  = remove_spikes(nais_ion_neg_10min_w)
+nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
+
 print("\t Data loaded, computing the results...")
 
 res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
@@ -139,30 +158,62 @@ print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
-event_number = 35
-event_dates = bse_datetime[event_number]
-start_ev = event_dates[0]
-end_ev = event_dates[1]
+# event_number = 35
+# event_dates = bse_datetime[event_number]
+# start_ev = event_dates[0]
+# end_ev = event_dates[1]
 
-nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
-nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
-nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
-met_10min = data_dic['met'].loc[start_ev:end_ev]
+# nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
+# nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
+# nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
+# met_10min = data_dic['met'].loc[start_ev:end_ev]
 
-res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
-			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-			diff_order=diff_order, smooth_window=roll_period)
-print("The instance containing the result has been created (res)")
+# res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+# 			diff_order=diff_order, smooth_window=roll_period)
+# print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
+def banana_plot(psd_data, colorbar_max_lim=2000.0, ymin=3, ymax=550, cmap='viridis', title=None):
+    
+    psd = psd_data.copy()
+    # need to add an additional time index so that the last row of real data is plotted
+    freq = psd.index.to_series().diff().min()
+    psd.loc[psd.index.max() + freq] = None
+    
+    #transpose the binned smps data for plotting
+    transposed_data = psd.T
+    
+    #extract diameters from the psd dataframe (only works when using raw data loaded using fileloader.py)
+    dp = psd.columns.values.astype(float)
+    
+    #generate plot
+    fig, ax = plt.subplots()
+
+    #image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(), vmin=1, vmax=colorbar_max_lim, cmap=cmap )
+    image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(vmin=1, vmax=colorbar_max_lim), cmap=cmap )
+    
+    ax.set_title(title)
+    ax.set_xlabel('Date/Time')
+    ax.set_ylabel('Particle Diameter [nm]')
+    ax.set_ylim(bottom=ymin, top=ymax)
+    ax.set_yscale('log')
+    ax.grid(True, which='both', axis='both', linestyle='--', 
+            color='k', linewidth=0.8)
+
+    cbar = fig.colorbar(image,  pad = 0.1)
+    cbar.set_label('dN/dlogDp [$cm^{-3}$]')
+
+glob_rad = met_10min_w['global_radiation'].rolling(window='24h', center=True).mean()
 
 
-# res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], event_list= bse_datetime, commony=sharey)
-# res.plot_members(bin_ranges=bin_all, s= 'pos', commony=True)
+plt.figure()
+# plt.plot(glob_rad, label = 'global radiation')
+plt.plot(nais_part_pos_10min_w.sum(axis=1))
+plt.legend()
+plt.grid()
 
-# plt.show()
-print(df_events)
-s='neg'
-# res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, commony=False)
-res_w.scatter_values(s, x_data='dtemp', bin_ranges=bin_all, commony=False)
-res_w.plot_members(bin_ranges=bin_ranges, s = s, commony=False)
+
+res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = None)
+res_w.plot_events(s = 'neg', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = None)
+
 plt.show()

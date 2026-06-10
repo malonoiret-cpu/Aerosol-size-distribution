@@ -51,15 +51,15 @@ todo
 	
 
 
-what's needed : 
-	- add a tag for each time stamp to say if it's an event and if the's pollution, to show it on scatter plots
-	- consider calculating the importance of the members by ratio (ie Q_snow / member term)
+what's needed :
 	- should exe_all.py store results in csv?
 	- improve plot_events so we can see the polluted and not polluted events. Improve labelling as well (if labelling is necessary)
 	- show on every plots (in title for exemple, if the event is polluted or not)
 	- check mass defect plot??
 	- scatter plot with (d)temperature and wind visible
 	- Think of a filter to remove crazy high values overall (they are not all qualified as polluted)
+		-> done but too strong
+	- need to better define "summer" and "winter" events
 
 
 

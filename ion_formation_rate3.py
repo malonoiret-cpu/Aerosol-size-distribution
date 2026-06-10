@@ -149,10 +149,11 @@ class IonFormation:
         full_cumsum_shifted = full_cumsum.shift(1, axis=1).fillna(0)    # The first bin is filled with 0s, the second with the concentration of the first bin, the third the sum of the two first...
         return full_cumsum_shifted
     
-    def _diff(self, df: pd.DataFrame, order: int = 2):
+    def _diff(self, df: pd.DataFrame, order: int = 2, fb: Literal['backward', 'forward'] = 'backward'):
         """
         Compute dN/dt using different methods.
-        order=2 : standard 2-point forward difference (default value when calling the class)
+        order=2 : standard 2-point 'fb' difference (default value when calling the class)
+            -> fb determine if the difference is backaward (N(t)-N(t-1)) or forward (N(t+1) - N(t))
         order=3 : 3-point central difference
         order=5 : 5-point central difference
         Returns a DataFrame aligned on the interior time index.
@@ -163,7 +164,7 @@ class IonFormation:
         if order == 2:
             dN = N[1:] - N[:-1]
             dt = np.diff(t)[:, None]
-            idx = df.index[:-1]
+            idx = df.index[1:] if fb == 'backward' else df.index[:-1]
 
         elif order == 3:
             dN = N[2:] - N[:-2]
@@ -330,7 +331,7 @@ class IonFormation:
         """Calculate the growth rate"""
         return 0
     
-    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list, commony = False):
+    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list, commony = False, T_roll = None):
         """Plot concentration for each bin range given and the wind over time.
         Highlight the events studied with the given event list"""
 
@@ -344,26 +345,43 @@ class IonFormation:
             raise ValueError("s must be 'pos' or 'neg'")
         
         df_wind = self.met_df['true_wind_velocity']
+        df_rad = self.met_df['global_radiation']
         
         if self.smooth_window is not None:
             df_conc = df_conc.rolling(window=self.smooth_window, center = True).mean()
             df_wind = df_wind.rolling(window=self.smooth_window, center = True).mean()
+            df_rad = df_rad.rolling(window=self.smooth_window, center = True).mean()
+            if T_roll is not None:
+                print(f"Warning: the rolling mean is applied with the window given to the class ({self.smooth_window}), not the window given when plotting ({T_roll})")
+        elif T_roll is not None:
+            df_conc = df_conc.rolling(window=T_roll, center = True).mean()
+            df_wind = df_wind.rolling(window=T_roll, center = True).mean()
+            df_rad = df_rad.rolling(window=T_roll, center = True).mean()
 
         nplots = len(bin_ranges)                #
         ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
         nrow = int(nplots / ncol)               #
-        fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*8,nrow*5), sharex=True, sharey=commony, squeeze=False)
+        fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*12,nrow*5), sharex=True, sharey=commony, squeeze=False)
 
         for idx, (ax1, (lo, hi)) in enumerate(zip(axs.flatten(), bin_ranges)):
             
             col = idx%ncol
 
             ax2 = ax1.twinx()   # Plot the wind
-            ax2.plot(df_wind, '-', alpha = 0.5, color = 'tomato', label = 'Wind velocity')
+            ax2.plot(df_wind, '-', alpha = 0.2, color = "#da6dd0", label = 'Wind velocity')
             if col == ncol -1:
-                ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
-                ax2.tick_params(axis='y', colors='tomato')
-            else : ax2.tick_params(axis='y', colors='tomato')
+                ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = "#da6dd0")
+                ax2.tick_params(axis='y', colors="#da6dd0")
+            else : ax2.tick_params(axis='y', colors="#da6dd0")
+
+            ax3 = ax1.twinx()   # Plot global radiation
+            ax3.spines["right"].set_position(("axes", 1.1))  # offset so it doesn't overlap ax2
+            ax3.plot(df_rad, alpha = 0.5, color = 'grey', label = "Global radiation ($W.m^{-2}$)")
+            ax3.set_ylim(-500, 420)
+            if col == ncol -1:
+                ax3.set_ylabel("Global radiation ($W.m^{-2}$)", color = 'grey')
+                ax3.tick_params(axis='y', colors='grey')
+            else : ax3.tick_params(axis='y', colors='grey')
 
             ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
             ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
@@ -374,8 +392,11 @@ class IonFormation:
             ax1.set_title(subtitle)
 
             for (start, end), ev_nb in zip(event_list, range(len(event_list))):     # Plot the wind events
-                ax2.axvspan(xmin = start, xmax = end, color = 'tomato', alpha = 0.2)
-                ax2.text(start, np.max(df_wind), ev_nb)
+                ax2.axvspan(xmin = start, xmax = end, color = "#087edf", alpha = 0.3)
+                # ax2.text(start, np.max(df_wind), ev_nb)
+                mid = start + (end - start) / 2                      # center of the span
+                ypos = np.max(df_wind) * (1 if ev_nb % 3 == 0 else 0.95 if ev_nb%3 == 1 else 0.9)  # alternate height
+                ax2.text(mid, ypos, str(ev_nb), ha='center', va='top')
 
         fig.suptitle(main_title)
         fig.autofmt_xdate()
