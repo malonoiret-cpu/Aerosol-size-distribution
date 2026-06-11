@@ -3,11 +3,9 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
-import matplotlib.dates as mdates
 from typing import Literal
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import itertools
+from mpl_toolkits.mplot3d import Axes3D
 
 class IonFormation:
     def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, met_df: pd.DataFrame, df_events : pd.DataFrame = None,       \
@@ -565,14 +563,14 @@ class IonFormation:
                        ras: bool = False, pollution: bool = False):
         
         if x_data == 'wind':
-            xvalues_raw = self.met_df['true_wind_velocity']
+            xvalues_raw = self.met_df['true_wind_velocity'].copy()
             xlab = f"Wind velocity ($m\\cdot s^{{-1}}$)"
         elif x_data == 'temperature':
-            xvalues_raw = self.met_df['air_temperature']
+            xvalues_raw = self.met_df['air_temperature'].copy()
             xlab = f"Temperature (°C)"
         elif x_data == 'dtemp':
             dtemp = self._diff(self.met_df[['air_temperature', 'air_pressure']])
-            xvalues_raw = dtemp['air_temperature'] * 6  # Multiply by 6 to have °C/h
+            xvalues_raw = dtemp['air_temperature'].copy() * 6  # Multiply by 6 to have °C/h
             xlab = f"dT / dt (°C $\\cdot h^{{-1}}$)"
         
         if s=='pos':
@@ -618,3 +616,100 @@ class IonFormation:
         fig.legend(lines, labels, loc = "upper center", ncol=3)
         plt.tight_layout()
         
+    def scatter_WT(self, s = 'pos',
+                       bin_ranges = [(0.75, 31.62)], commony : bool = False,
+                       ras: bool = False, pollution: bool = False):
+        """Very similar with scatter_values, but scatter temperature against wind, with colors scaled on the production rate"""
+
+        if s=='pos':
+            Q_snow = self.Q_snow_pos
+            suptitle = "Positive ions"
+        elif s=='neg':
+            Q_snow = self.Q_snow_neg
+            suptitle = "Negative Ions"
+        else : raise ValueError("s must be 'pos' or 'neg'")
+
+        wind_raw = self.met_df['true_wind_velocity'].copy()
+        wind = wind_raw.reindex(Q_snow.index)
+
+        temp_raw = self.met_df['air_temperature'].copy()
+        temp = temp_raw.reindex(Q_snow.index)
+        xlab = "Temperature (°C)"
+
+        # compute the masks according to the event type
+        mask_event = self.event_tags == 'event'
+        mask_poll = self.event_tags == 'event_poll'
+        mask_ras = self.event_tags.isna()
+
+        nplots = len(bin_ranges)                #
+        ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
+        nrow = int(np.ceil(nplots / ncol))      #
+
+        fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*6,nrow*4), sharex= True, sharey=commony, squeeze=False)
+
+        for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
+            
+            Q_snow_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis = 1)
+            ax.scatter(temp[mask_event], wind[mask_event], c = Q_snow_sum[mask_event], alpha=.8, s=15, label='event')
+        
+            col = idx%ncol  # column index for plotting columns
+            if col == 0:
+                ax.set_ylabel("Wind [$m.s^{-1}$]")
+            if idx >= ncol * (nrow - 1):
+                ax.set_xlabel(xlab)
+            ax.grid()
+            subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
+            ax.set_title(subtitle)
+            lines, labels = ax.get_legend_handles_labels()
+        fig.suptitle(suptitle)
+        fig.legend(lines, labels, loc = "upper center", ncol=3)
+        plt.tight_layout()
+
+    def scatter_3d(self, s = 'pos',
+                       bin_ranges = [(0.75, 31.62)], commony : bool = False,
+                       ras: bool = False, pollution: bool = False):
+        
+        if s=='pos':
+            Q_snow = self.Q_snow_pos
+            suptitle = "Positive ions"
+        elif s=='neg':
+            Q_snow = self.Q_snow_neg
+            suptitle = "Negative Ions"
+        else : raise ValueError("s must be 'pos' or 'neg'")
+
+        wind_raw = self.met_df['true_wind_velocity'].copy()
+        wind = wind_raw.reindex(Q_snow.index)
+
+        temp_raw = self.met_df['air_temperature'].copy()
+        temp = temp_raw.reindex(Q_snow.index)
+        xlab = "Temperature (°C)"
+
+        # compute the masks according to the event type
+        mask_event = self.event_tags == 'event'
+        mask_poll = self.event_tags == 'event_poll'
+        mask_ras = self.event_tags.isna()
+
+        nplots = len(bin_ranges)
+        ncol = int(np.ceil(np.sqrt(nplots)))
+        nrow = int(np.ceil(nplots / ncol))
+
+        fig = plt.figure(figsize=(ncol * 6, nrow * 5))
+
+        for idx, (bin_low, bin_high) in enumerate(bin_ranges):
+
+            ax = fig.add_subplot(nrow, ncol, idx + 1, projection='3d')
+            Q_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis=1)
+
+            ax.scatter(wind[mask_event], temp[mask_event], Q_sum[mask_event],
+                        color='blue', alpha=0.8, s=15, label='event')
+            
+            ax.set_xlabel("Wind ($m\\cdot s^{-1}$)")
+            ax.set_ylabel("Temperature (°C)")
+            ax.set_zlabel("Production rate [$cm^{-3}\\cdot s^{-1}$]")
+            subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
+            ax.set_title(subtitle)
+        
+        handles, labels = ax.get_legend_handles_labels()
+        fig.suptitle(suptitle)
+        fig.legend(handles, labels, loc="upper center", ncol=3)
+        plt.tight_layout()

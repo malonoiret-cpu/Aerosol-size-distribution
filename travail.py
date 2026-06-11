@@ -105,7 +105,35 @@ ylogscale = False       # log scale on y-axis
 qual = 150              # Output plots quality
 
 # ---------------------------------------------------------------------------
+def banana_plot(psd_data, colorbar_max_lim=2000.0, ymin=3, ymax=550, cmap='viridis', title=None):
+    
+    psd = psd_data.copy()
+    # need to add an additional time index so that the last row of real data is plotted
+    freq = psd.index.to_series().diff().min()
+    psd.loc[psd.index.max() + freq] = None
+    
+    #transpose the binned smps data for plotting
+    transposed_data = psd.T
+    
+    #extract diameters from the psd dataframe (only works when using raw data loaded using fileloader.py)
+    dp = psd.columns.values.astype(float)
+    
+    #generate plot
+    fig, ax = plt.subplots()
 
+    #image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(), vmin=1, vmax=colorbar_max_lim, cmap=cmap )
+    image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(vmin=1, vmax=colorbar_max_lim), cmap=cmap )
+    
+    ax.set_title(title)
+    ax.set_xlabel('Date/Time')
+    ax.set_ylabel('Particle Diameter [nm]')
+    ax.set_ylim(bottom=ymin, top=ymax)
+    ax.set_yscale('log')
+    ax.grid(True, which='both', axis='both', linestyle='--', 
+            color='k', linewidth=0.8)
+
+    cbar = fig.colorbar(image,  pad = 0.1)
+    cbar.set_label('dN/dlogDp [$cm^{-3}$]')
 # ---- load data -------------------------------------------------------
 def load_psd(filepath):
 	"""Load the nais et smps files."""
@@ -164,62 +192,28 @@ print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
-# event_number = 35
-# event_dates = bse_datetime[event_number]
-# start_ev = event_dates[0]
-# end_ev = event_dates[1]
+event_number = 6
+event_dates = bse_datetime[event_number]
+start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
+end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
 
-# nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
-# nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
-# nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
-# met_10min = data_dic['met'].loc[start_ev:end_ev]
+nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
+nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
+nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
+met_10min = data_dic['met'].loc[start_ev:end_ev]
 
-# res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
-# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-# 			diff_order=diff_order, smooth_window=roll_period)
-# print("The instance containing the result has been created (res)")
+res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+			diff_order=diff_order, smooth_window=roll_period)
+print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
-def banana_plot(psd_data, colorbar_max_lim=2000.0, ymin=3, ymax=550, cmap='viridis', title=None):
-    
-    psd = psd_data.copy()
-    # need to add an additional time index so that the last row of real data is plotted
-    freq = psd.index.to_series().diff().min()
-    psd.loc[psd.index.max() + freq] = None
-    
-    #transpose the binned smps data for plotting
-    transposed_data = psd.T
-    
-    #extract diameters from the psd dataframe (only works when using raw data loaded using fileloader.py)
-    dp = psd.columns.values.astype(float)
-    
-    #generate plot
-    fig, ax = plt.subplots()
-
-    #image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(), vmin=1, vmax=colorbar_max_lim, cmap=cmap )
-    image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(vmin=1, vmax=colorbar_max_lim), cmap=cmap )
-    
-    ax.set_title(title)
-    ax.set_xlabel('Date/Time')
-    ax.set_ylabel('Particle Diameter [nm]')
-    ax.set_ylim(bottom=ymin, top=ymax)
-    ax.set_yscale('log')
-    ax.grid(True, which='both', axis='both', linestyle='--', 
-            color='k', linewidth=0.8)
-
-    cbar = fig.colorbar(image,  pad = 0.1)
-    cbar.set_label('dN/dlogDp [$cm^{-3}$]')
-
-glob_rad = met_10min_w['global_radiation'].rolling(window='24h', center=True).mean()
 
 
-plt.figure()
-plt.plot(glob_rad, label = 'global radiation')
-# plt.plot(nais_part_pos_10min_w.sum(axis=1))
-plt.legend()
-plt.grid()
 
-
-res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = None)
-# res_w.plot_events(s = 'neg', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = None)
+# res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = '24h')
+# res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
+# res.plot_members(bin_ranges=bin_all, s = 'neg', commony = True, logsc = ylogscale)
+res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey)
+res_w.scatter_3d('neg', bin_ranges=[(.75, .75)], commony=sharey)
 
 plt.show()

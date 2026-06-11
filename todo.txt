@@ -58,7 +58,7 @@ what's needed :
 	- check mass defect plot??
 	- scatter plot with (d)temperature and wind visible
 	- Think of a filter to remove crazy high values overall (they are not all qualified as polluted)
-		-> done but too strong
+		-> done, simple mask that removes a few values
 	- need to better define "summer" and "winter" events
 
 
@@ -91,6 +91,7 @@ Answer to second discussion:
 
 
 Questions: 	- some pikes for small ions concentraion seem to happen out of the events
+				-> actually, when looking at the production rate for periods with very low concentration changes, we still observe pretty high production rate for some bins
 			- Are the data I have clean? There's some time stamp with very high values which compress the output plots. Are we expecting such a variability in the measurments?
 
 First meeting with Matt and Katy:
