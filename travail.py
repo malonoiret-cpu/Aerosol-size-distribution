@@ -3,8 +3,8 @@ import os
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 from ion_formation_rate3 import IonFormation as ifr
-# from ion_formation_rate import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
@@ -125,14 +125,14 @@ print("The data have been loaded \n \t Computing the results...")
 
 #%% ---- Load datasets and comput results for the whole winter -----------------------------------------------------------------------
 # Slice over the whole period considered
-# smps_10min_win = data_dic['smps'].loc[start_w:end_w]								# Not used !!!
+smps_10min_win = data_dic['smps'].loc[start_w:end_w]								# Not used !!!
 nais_part_pos_10min_w = data_dic['nais_part_pos_file'].loc[start_w:end_w]
 nais_ion_neg_10min_w = data_dic['nais_ion_neg_file'].loc[start_w:end_w]
 nais_ion_pos_10min_w = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
 met_10min_w = data_dic['met'].loc[start_w:end_w]
 
 # Cut of the weird values
-def remove_spikes(df, window='1h', threshold=3):
+def remove_spikes2(df, window='30min', threshold=5):
     """Replace values deviating more than threshold * local_std from the rolling median with NaN"""
     row_sum = df.sum(axis=1)
     rolling_med = row_sum.rolling(window=window, center=True, min_periods=1).median()
@@ -145,7 +145,13 @@ def remove_spikes(df, window='1h', threshold=3):
     )
     return df.where(~outlier_mask_2d, other=np.nan)
 
-nais_part_pos_10min_w = remove_spikes(nais_part_pos_10min_w)
+def remove_spikes(df, threshold = 20000):
+	mask = df.sum(axis = 1) > threshold
+	df_clean = df.copy()
+	df_clean.loc[mask] = np.nan
+	return df_clean
+
+nais_part_pos_10min_w = remove_spikes(nais_part_pos_10min_w, threshold = 1*10**6)
 nais_ion_neg_10min_w  = remove_spikes(nais_ion_neg_10min_w)
 nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
@@ -207,13 +213,13 @@ glob_rad = met_10min_w['global_radiation'].rolling(window='24h', center=True).me
 
 
 plt.figure()
-# plt.plot(glob_rad, label = 'global radiation')
-plt.plot(nais_part_pos_10min_w.sum(axis=1))
+plt.plot(glob_rad, label = 'global radiation')
+# plt.plot(nais_part_pos_10min_w.sum(axis=1))
 plt.legend()
 plt.grid()
 
 
 res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = None)
-res_w.plot_events(s = 'neg', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = None)
+# res_w.plot_events(s = 'neg', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = None)
 
 plt.show()

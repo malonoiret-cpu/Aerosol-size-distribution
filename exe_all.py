@@ -12,7 +12,10 @@ import shutil
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
 start_w = '2019-10-15 00:00:00'     # winter time window
-end_w = '2020-03-15 00:00:00'
+end_w = '2020-03-18 00:00:00'
+
+start_s = '2020-03-18 00:00:00'
+end_s = '2020-10-01 00:00:00'
 
 pollution_remove = False	# If False, polluted events are tagged as polluted event, and their results are computed. If true, their are not considered as events
 spikes_remove = True		# Remove the pikes in concentration series according to the spikes_remove function
@@ -79,24 +82,16 @@ nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_w:end_w]
 nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
 met_10min = data_dic['met'].loc[start_w:end_w]
 
-def remove_spikes(df, window='1h', threshold=3):
-    """Replace values deviating more than threshold * local_std from the rolling median with NaN"""
-    """Replace values deviating more than threshold * local_std from the rolling median with NaN"""
-    row_sum = df.sum(axis=1)
-    rolling_med = row_sum.rolling(window=window, center=True, min_periods=1).median()
-    rolling_std = row_sum.rolling(window=window, center=True, min_periods=1).std()
-    outlier_mask = (row_sum - rolling_med).abs() > threshold * rolling_std
-    outlier_mask_2d = pd.DataFrame(
-        np.tile(outlier_mask.values[:, None], (1, df.shape[1])),
-        index=df.index,
-        columns=df.columns
-    )
-    return df.where(~outlier_mask_2d, other=np.nan)
+def remove_spikes(df, threshold = 20000):
+	mask = df.sum(axis = 1) > threshold
+	df_clean = df.copy()
+	df_clean.loc[mask] = np.nan
+	return df_clean
 
 if spikes_remove == True:
-	nais_part_pos_10min = remove_spikes(nais_part_pos_10min)
-	nais_ion_neg_10min  = remove_spikes(nais_ion_neg_10min)
-	nais_ion_pos_10min  = remove_spikes(nais_ion_pos_10min)
+    nais_part_pos_10min = remove_spikes(nais_part_pos_10min, threshold = 1*10**6)
+    nais_ion_neg_10min  = remove_spikes(nais_ion_neg_10min)
+    nais_ion_pos_10min  = remove_spikes(nais_ion_pos_10min)
 
 print("\t Data loaded, computing the results...")
 # ----------------------------------------------------------------------
@@ -117,6 +112,7 @@ for start, end in bse_study:
     nais_ion_pos_10min_ev = nais_ion_pos_10min.loc[start:end]
     met_10min_ev = met_10min.loc[start:end]
 
+    print("Computing class")
     res = ifr(nais_part_pos_10min_ev, nais_ion_pos_10min_ev, nais_ion_neg_10min_ev, met_df = met_10min_ev, df_events=df_events,
               low_dia = dia_min, high_dia = dia_max, temperature=temperature, pressure=pressure,
               diff_order=diff_order, smooth_window=roll_period)
@@ -125,6 +121,7 @@ for start, end in bse_study:
     res_dict[event_name] = res
 
     # ---- make the directory to the dedicated folder
+    print("Making directory")
     event_slug = f"{start.date()}_to_{end.date()}" # [:10]
     event_dir = os.path.join(results_dir, event_slug)
     os.makedirs(event_dir)
@@ -141,7 +138,7 @@ for start, end in bse_study:
     # res.plot_members(bin_ranges= bin_ranges, s='ratio', commony= sharey, logsc = ylogscale)
     # plt.savefig(os.path.join(event_dir, "members_ratio.png"), dpi=qual, bbox_inches='tight')
     # plt.close()
-
+    print("Plotting")
     res.plot_hm(s='pos')
     plt.savefig(os.path.join(event_dir, "heatmap_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
@@ -170,6 +167,7 @@ for start, end in bse_study:
     plt.savefig(os.path.join(event_dir, "members_all_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 	
+    print("Wrinting the note")
     note = df_events.loc[df_events['start'] == start, 'notes'].values[0]
     with open(os.path.join(event_dir, "notes.txt"), 'w') as f:
         f.write(str(note))
