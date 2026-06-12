@@ -1,5 +1,5 @@
 # Aerosol-size-distribution
-Analysis of the ion size distribution and formation rate during blowing snow events, using data collected during the MOSAiC expedition (2019/2020). This work has been done during my master's degree's first year's internship, with Hans-Werner JACOBI as supervisor.
+Analysis of the ion size distribution and formation rate during blowing snow events, using data collected during the MOSAiC expedition (2019/2020). This work is a part my master's degree's first year's internship, with Hans-Werner JACOBI as supervisor.
 
 ## Project structure
 |-- travail.py 				# Main Script
