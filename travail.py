@@ -185,10 +185,10 @@ nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
 print("\t Data loaded, computing the results...")
 
-res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
-			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-			diff_order=diff_order, smooth_window=roll_period)
-print("\t Results computed in the instance res_w")
+# res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
+# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+# 			diff_order=diff_order, smooth_window=roll_period)
+# print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
@@ -209,11 +209,13 @@ print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
 
+res.volume_plot('pos', bin=0.75)
+plt.show()
 
 # res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = '24h')
 # res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
 # res.plot_members(bin_ranges=bin_all, s = 'neg', commony = True, logsc = ylogscale)
-res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey)
-res_w.scatter_3d('neg', bin_ranges=[(.75, .75)], commony=sharey)
+# res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey)
+# res_w.scatter_3d('neg', bin_ranges=[(.75, .75)], commony=sharey)
 
-plt.show()
+# plt.show()

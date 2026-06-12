@@ -713,3 +713,35 @@ class IonFormation:
         fig.suptitle(suptitle)
         fig.legend(handles, labels, loc="upper center", ncol=3)
         plt.tight_layout()
+
+    def volume_plot(self, s:Literal['pos, neg'] = 'pos', bin = 0.75):
+        """needs to be improve bit should give good results
+        could plot on the same plot and make for all size bins"""
+        if s== 'pos':
+            psd = self.pos_N_ion
+            Q_snow = self.Q_snow_pos
+        elif s == 'neg':
+            psd = self.neg_N_ion
+            Q_snow = self.Q_snow_neg
+        else: raise ValueError("s must be 'pos' or 'neg'")
+
+        # comput the volume
+        df_volume = psd.copy()
+        diameters = df_volume.columns
+        for diameter in diameters:
+            volume = (np.pi / 6) * diameter**3
+            df_volume.loc[:, diameter] *= volume
+        
+        volume = df_volume.loc[:, bin]
+
+        fig, (ax1, ax2) = plt.subplots(2,1, figsize = (15,8), sharex=True)
+
+        ax1.plot(volume)
+        ax1.set_ylabel("Total volume ($cm^3$)")
+        ax1.grid()
+
+        ax2.plot(Q_snow.loc[:, bin])
+        ax2.set_ylabel("Production rate")
+        ax2.set_xlabel("Datetime")
+        ax2.grid()
+        plt.tight_layout()
