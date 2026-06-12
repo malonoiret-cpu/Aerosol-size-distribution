@@ -77,25 +77,12 @@ def process_event(args):
                 low_dia = dia_min, high_dia = dia_max, temperature=temperature, pressure=pressure,
                 diff_order=diff_order, smooth_window=roll_period)
 
-        event_name = f"{start.date()}_to_{end.date()}"#start + 'to' + end
-
         # ---- make the directory to the dedicated folder
-        event_slug = f"{start.date()}_to_{end.date()}" # [:10]
+        event_slug = f"{start.date()}_to_{end.date()}"
         event_dir = os.path.join(results_dir, event_slug)
         os.makedirs(event_dir, exist_ok=True)
 
         # ---- generate the event plots and save them
-        # res.plot_members(bin_ranges= bin_ranges, s='pos', commony= sharey, logsc = ylogscale)
-        # plt.savefig(os.path.join(event_dir, "members_pos.png"), dpi=qual, bbox_inches='tight')
-        # plt.close()
-
-        # res.plot_members(bin_ranges= bin_ranges, s='neg', commony= sharey, logsc = ylogscale)
-        # plt.savefig(os.path.join(event_dir, "members_neg.png"), dpi=qual, bbox_inches='tight')
-        # plt.close()
-
-        # res.plot_members(bin_ranges= bin_ranges, s='ratio', commony= sharey, logsc = ylogscale)
-        # plt.savefig(os.path.join(event_dir, "members_ratio.png"), dpi=qual, bbox_inches='tight')
-        # plt.close()
 
         res.plot_hm(s='pos')
         plt.savefig(os.path.join(event_dir, "heatmap_pos.png"), dpi=qual, bbox_inches='tight')
@@ -112,10 +99,6 @@ def process_event(args):
         res.plot_hm_conc(s='neg')
         plt.savefig(os.path.join(event_dir, "conc_hm_neg.png"), dpi=qual, bbox_inches='tight')
         plt.close('all')
-
-        # res.plot_hm_conc(s='ratio')
-        # plt.savefig(os.path.join(event_dir, "conc_hm_ratio.png"), dpi=qual, bbox_inches='tight')
-        # plt.close('all')
         
         res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
         plt.savefig(os.path.join(event_dir, "members_all_pos.png"), dpi=qual, bbox_inches='tight')
@@ -213,5 +196,12 @@ if __name__ == '__main__':
     plt.savefig(os.path.join(results_dir, "scatter_temperature_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
+    res_w.scatter_WT('pos', bin_ranges=bin_all, commony=False, ras=True, pollution=True)
+    plt.savefig(os.path.join(results_dir, "scatter_WT_pos.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
+
+    res_w.scatter_WT('neg', bin_ranges=bin_all, commony=False, ras=True, pollution=True)
+    plt.savefig(os.path.join(results_dir, "scatter_WT_neg.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
     print(f"Global period plots are saved in {results_dir}")
     # ------------------------------------------------------------------------------------
