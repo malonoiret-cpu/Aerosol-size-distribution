@@ -332,7 +332,6 @@ class IonFormation:
     def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list, commony = False, T_roll = None):
         """Plot concentration for each bin range given and the wind over time.
         Highlight the events studied with the given event list"""
-
         if s == 'pos':
             df_conc = self.pos_N_ion
             main_title = f"Positive ion concentration over the winter"
@@ -341,6 +340,8 @@ class IonFormation:
             df_conc = self.neg_N_ion
         else:
             raise ValueError("s must be 'pos' or 'neg'")
+        
+        bse_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in event_list]
         
         df_wind = self.met_df['true_wind_velocity']
         df_rad = self.met_df['global_radiation']
@@ -715,7 +716,7 @@ class IonFormation:
         plt.tight_layout()
 
     def volume_plot(self, s:Literal['pos, neg'] = 'pos', bin = 0.75):
-        """needs to be improve bit should give good results
+        """needs to be improve but should give good results
         could plot on the same plot and make for all size bins"""
         if s== 'pos':
             psd = self.pos_N_ion

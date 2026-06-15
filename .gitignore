@@ -223,5 +223,6 @@ Data-clean/
 Results/
 Results_all/
 Results_summer/
+Results_winter/
 __pycache__/
 *.pyc
