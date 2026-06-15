@@ -8,7 +8,7 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-10-01 00:00:00'
+start_w = '2019-10-15 00:00:00'
 end_w = '2020-10-01 00:00:00'
 
 npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
@@ -97,7 +97,7 @@ bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 
 bin_ranges = [(0.75,  31.62), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]   # for grouped subplots
 bin_all = all_bin_size(bins)    # for unique bin subplots
-bin_all = bin_all[0:18] + [(10., 31.62)]
+bin_all = bin_all[0:19] # + [(11.55, 31.62)]
 
 qual = 150              # Output plots quality
 sharey = False          # Share y-axis when subplotting (not on heat map)
@@ -185,31 +185,32 @@ nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
 print("\t Data loaded, computing the results...")
 
-# res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
-# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-# 			diff_order=diff_order, smooth_window=roll_period)
-# print("\t Results computed in the instance res_w")
+res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
+			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+			diff_order=diff_order, smooth_window=roll_period)
+print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
-event_number = 6
-event_dates = bse_datetime[event_number]
-start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
-end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
+# event_number = 6
+# event_dates = bse_datetime[event_number]
+# start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
+# end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
 
-nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
-nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
-nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
-met_10min = data_dic['met'].loc[start_ev:end_ev]
+# nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
+# nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
+# nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
+# met_10min = data_dic['met'].loc[start_ev:end_ev]
 
-res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
-			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-			diff_order=diff_order, smooth_window=roll_period)
-print("The instance containing the result has been created (res)")
+# res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+# 			diff_order=diff_order, smooth_window=roll_period)
+# print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
 
-res.volume_plot('pos', bin=0.75)
+# res.volume_plot('neg', bin_ranges=bin_all, commony=False)
+res_w.plot_events('pos', bin_ranges=[(.75, 31.62)], event_list=bse_list, T_roll='24h')
 plt.show()
 
 # res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = '24h')

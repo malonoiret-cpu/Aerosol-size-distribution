@@ -367,7 +367,7 @@ class IonFormation:
             col = idx%ncol
 
             ax2 = ax1.twinx()   # Plot the wind
-            ax2.plot(df_wind, '-', alpha = 0.2, color = "#da6dd0", label = 'Wind velocity')
+            ax2.plot(df_wind, '-', alpha = 0.5, color = "#da6dd0", label = 'Wind velocity')
             if col == ncol -1:
                 ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = "#da6dd0")
                 ax2.tick_params(axis='y', colors="#da6dd0")
@@ -376,7 +376,7 @@ class IonFormation:
             ax3 = ax1.twinx()   # Plot global radiation
             ax3.spines["right"].set_position(("axes", 1.1))  # offset so it doesn't overlap ax2
             ax3.plot(df_rad, alpha = 0.5, color = 'grey', label = "Global radiation ($W.m^{-2}$)")
-            ax3.set_ylim(-500, 420)
+            ax3.set_ylim(-12.5, 420)
             if col == ncol -1:
                 ax3.set_ylabel("Global radiation ($W.m^{-2}$)", color = 'grey')
                 ax3.tick_params(axis='y', colors='grey')
@@ -392,7 +392,6 @@ class IonFormation:
 
             for (start, end), ev_nb in zip(event_list, range(len(event_list))):     # Plot the wind events
                 ax2.axvspan(xmin = start, xmax = end, color = "#087edf", alpha = 0.3)
-                # ax2.text(start, np.max(df_wind), ev_nb)
                 mid = start + (end - start) / 2                      # center of the span
                 ypos = np.max(df_wind) * (1 if ev_nb % 3 == 0 else 0.95 if ev_nb%3 == 1 else 0.9)  # alternate height
                 ax2.text(mid, ypos, str(ev_nb), ha='center', va='top')
@@ -519,7 +518,7 @@ class IonFormation:
         
         nplots = len(bin_ranges)                #
         ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
-        nrow = int(np.ceil(nplots / ncol))               #
+        nrow = int(np.ceil(nplots / ncol))      #
         fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*6,nrow*4), sharex= True, sharey=commony, squeeze=False)
 
         for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
@@ -553,8 +552,8 @@ class IonFormation:
             else:
                 ax2.tick_params(axis='y', colors=color, labelleft=False, labelright=False) #, labelsize=7
 
-        fig.text(0.5, 0., rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
-        fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
+        # fig.text(0.5, 0., rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
+        fig.legend(lines, labels, loc = "lower center", ncol=len(data_dic))
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
@@ -598,10 +597,8 @@ class IonFormation:
         for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
             
             Q_snow_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis = 1)
-            if ras == True:
-                ax.scatter(x_values[mask_ras], Q_snow_sum[mask_ras], color = 'grey', alpha=0.4, s=10, label='no event')
-            if pollution == True:
-                ax.scatter(x_values[mask_poll], Q_snow_sum[mask_poll], color = 'tomato', alpha=0.6, s=15, label='polluted event')
+            if ras: ax.scatter(x_values[mask_ras], Q_snow_sum[mask_ras], color = 'grey', alpha=0.4, s=10, label='no event')
+            if pollution: ax.scatter(x_values[mask_poll], Q_snow_sum[mask_poll], color = 'tomato', alpha=0.6, s=15, label='polluted event')
             ax.scatter(x_values[mask_event], Q_snow_sum[mask_event], color = 'blue', alpha=.8, s=15, label='event')
 
             col = idx%ncol  # column index for plotting columns
@@ -651,7 +648,9 @@ class IonFormation:
         for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
             
             Q_snow_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis = 1)
-            ax.scatter(temp[mask_event], wind[mask_event], c = Q_snow_sum[mask_event], alpha=.8, s=15, label='event')
+            if ras: ax.scatter(temp[mask_ras], wind[mask_ras], c = Q_snow_sum[mask_ras], alpha=.2, s=15, label='ras')
+            if pollution: ax.scatter(temp[mask_poll], wind[mask_poll], c = Q_snow_sum[mask_poll], alpha=.2, s=15, label='polluted event')
+            ax.scatter(temp[mask_event], wind[mask_event], c = Q_snow_sum[mask_event], alpha=.2, s=15, label='event')
         
             col = idx%ncol  # column index for plotting columns
             if col == 0:
@@ -669,7 +668,6 @@ class IonFormation:
     def scatter_3d(self, s = 'pos',
                        bin_ranges = [(0.75, 31.62)], commony : bool = False,
                        ras: bool = False, pollution: bool = False):
-        
         if s=='pos':
             Q_snow = self.Q_snow_pos
             suptitle = "Positive ions"
@@ -701,8 +699,9 @@ class IonFormation:
             ax = fig.add_subplot(nrow, ncol, idx + 1, projection='3d')
             Q_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis=1)
 
-            ax.scatter(wind[mask_event], temp[mask_event], Q_sum[mask_event],
-                        color='blue', alpha=0.8, s=15, label='event')
+            if ras: ax.scatter(wind[mask_ras], temp[mask_ras], Q_sum[mask_ras], color='blue', alpha=0.8, s=15, label='event')
+            if pollution: ax.scatter(wind[mask_poll], temp[mask_poll], Q_sum[mask_poll], color='blue', alpha=0.8, s=15, label='event')
+            ax.scatter(wind[mask_event], temp[mask_event], Q_sum[mask_event], color='blue', alpha=0.8, s=15, label='event')
             
             ax.set_xlabel("Wind ($m\\cdot s^{-1}$)")
             ax.set_ylabel("Temperature (°C)")
@@ -715,34 +714,60 @@ class IonFormation:
         fig.legend(handles, labels, loc="upper center", ncol=3)
         plt.tight_layout()
 
-    def volume_plot(self, s:Literal['pos, neg'] = 'pos', bin = 0.75):
-        """needs to be improve but should give good results
-        could plot on the same plot and make for all size bins"""
+    def volume_plot(self, s:Literal['pos, neg'] = 'pos', bin_ranges = 0.75, commony = True):
+        """Compare the total volume of particles of a size bin  with the production rate"""
         if s== 'pos':
             psd = self.pos_N_ion
             Q_snow = self.Q_snow_pos
+            main_title = f"Positive ions"
         elif s == 'neg':
             psd = self.neg_N_ion
             Q_snow = self.Q_snow_neg
+            main_title = f"Negative ions"
         else: raise ValueError("s must be 'pos' or 'neg'")
 
-        # comput the volume
+        # compute the volume
         df_volume = psd.copy()
         diameters = df_volume.columns
         for diameter in diameters:
             volume = (np.pi / 6) * diameter**3
             df_volume.loc[:, diameter] *= volume
-        
-        volume = df_volume.loc[:, bin]
 
-        fig, (ax1, ax2) = plt.subplots(2,1, figsize = (15,8), sharex=True)
+        nplots = len(bin_ranges)                #
+        ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
+        nrow = int(np.ceil(nplots / ncol))      #
+        fig, axs = plt.subplots(nrow,ncol, figsize = (ncol*6,nrow*4), sharex= True, sharey=commony, squeeze=False)
 
-        ax1.plot(volume)
-        ax1.set_ylabel("Total volume ($cm^3$)")
-        ax1.grid()
+        ax2_ref = None
 
-        ax2.plot(Q_snow.loc[:, bin])
-        ax2.set_ylabel("Production rate")
-        ax2.set_xlabel("Datetime")
-        ax2.grid()
+        for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
+            col = idx%ncol  # column index for plotting columns
+            Q_snow_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis = 1)
+            volume = df_volume.loc[:, bin_low:bin_high].sum(axis=1)
+
+            if commony and ax2_ref is not None:
+                ax2 = ax.twinx()
+                ax2.sharey(ax2_ref)
+            else :
+                ax2 = ax.twinx()
+                if commony : ax2_ref = ax2
+            color = "#0e4ed8"
+            ax2.plot(volume, color = color, alpha = 0.8)
+            if col == ncol -1:
+                ax2.set_ylabel("Total volume ($nm^3 \\cdot cm^{-3}$)", color = color)
+                ax2.tick_params(axis='y', colors=color) #, labelsize=7
+            else:
+                ax2.tick_params(axis='y', colors=color, labelright=not commony)
+
+            ax.plot(Q_snow_sum, ls = '--', color = 'tomato')
+            if col == 0 :
+                ax.set_ylabel("Production rate ($cm^{-3} \\cdot s^{-1}$)", color = 'tomato')
+            ax.tick_params(axis='y', colors='tomato')
+            ax.set_xlabel("Datetime")
+            ax.grid()
+            subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
+            ax.set_title(subtitle)
+            
+        fig.suptitle(main_title)
+        fig.autofmt_xdate()
         plt.tight_layout()

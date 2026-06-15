@@ -44,7 +44,7 @@ bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 		13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
 
 bin_all = [(size, size) for size in bins]
-bin_all = bin_all[0:18] + [(10., 31.62)]    # Group the bigger ones which give the same results for clearer plot
+bin_all = bin_all[0:19] + [(11.55, 31.62)]    # Group the bigger ones which give the same results for clearer plot
 
 bin_ranges = [(.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]   # for grouped subplots
 # ---------------------------------------------------------------------------
@@ -54,25 +54,18 @@ df_events = pd.read_csv('Data/days-of-interest.csv', sep = ';')
 df_events['start'] = pd.to_datetime(df_events['start'], format='ISO8601')
 df_events['end'] = pd.to_datetime(df_events['end'], format='ISO8601')
 
-# df_events_summer = df_events.copy()
-# df_events_summer = df_events_summer[(df_events_summer['start'] > pd.to_datetime(start_s)) & (df_events_summer['end'] < pd.to_datetime(end_s))]
-
-# df_events = df_events[(df_events['start'] > pd.to_datetime(start_w)) & (df_events['end'] < pd.to_datetime(end_w))]
-
-# if pollution_remove == True:
-#     df_events = df_events.loc[df_events['Pollution'] == False, :]
-#     df_events_summer = df_events_summer.loc[df_events_summer['Pollution'] == False, :]
-
-# bse_list = df_events[['start', 'end']].values.tolist()  # Create the list with start and end times of bses
-
-# bse_list_summer = df_events_summer[['start', 'end']].values.tolist()
-
-
 # ---- load data -------------------------------------------------------
 def load_psd(filepath):
 	"""Load the nais et smps files."""
 	df = pd.read_parquet(filepath)
 	return df
+
+def remove_spikes(df, threshold = 20000):
+    """Remove values which seem to be out of range (above the threshold)"""
+    mask = df.sum(axis = 1) > threshold
+    df_clean = df.copy()
+    df_clean.loc[mask] = np.nan
+    return df_clean
 
 CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_10min_clean.parquet',              # Import the resampled data
 			 'nais_part_pos_file'	:	'Data-clean/nais_pos_particles_clean_10min.parquet',
@@ -81,13 +74,6 @@ CLEAN_FILES = {'smps'				:	'Data-clean/smps_psd_10min_clean.parquet',           
 			 'met'                  :   'Data-clean/polarstern_weather_clean_10min.parquet'}
 
 data_dict = {name : load_psd(filename) for name, filename in CLEAN_FILES.items()}
-
-
-def remove_spikes(df, threshold = 20000):
-	mask = df.sum(axis = 1) > threshold
-	df_clean = df.copy()
-	df_clean.loc[mask] = np.nan
-	return df_clean
 
 def all_res(start, end, result_dir, data_dic, df_events):
     """Compute and save plots all results according to the settings (work with global variables)"""
@@ -153,11 +139,11 @@ def all_res(start, end, result_dir, data_dic, df_events):
     plt.savefig(os.path.join(result_dir, "scatter_temperature_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_WT('pos', bin_ranges=bin_all, commony=False, ras=True, pollution=True)
+    res_w.scatter_WT('pos', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll)
     plt.savefig(os.path.join(result_dir, "scatter_WT_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_WT('neg', bin_ranges=bin_all, commony=False, ras=True, pollution=True)
+    res_w.scatter_WT('neg', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll)
     plt.savefig(os.path.join(result_dir, "scatter_WT_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
@@ -207,9 +193,17 @@ def all_res(start, end, result_dir, data_dic, df_events):
         plt.savefig(os.path.join(event_dir, "members_all_neg.png"), dpi=qual, bbox_inches='tight')
         plt.close()
 
-        # note = df_events.loc[df_events['start'] == start, 'notes'].values[0]
-        # with open(os.path.join(event_dir, "notes.txt"), 'w') as f:
-        #     f.write(str(note))
+        res.volume_plot('pos', bin_ranges=bin_all, commony=False)
+        plt.savefig(os.path.join(event_dir, "volume_production_pos.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
+
+        res.volume_plot('neg', bin_ranges=bin_all, commony=False)
+        plt.savefig(os.path.join(event_dir, "volume_production_neg.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
+
+        note = df_events.loc[df_events['start'] == start_ev, 'notes'].values[0]
+        with open(os.path.join(event_dir, "notes.txt"), 'w') as f:
+            f.write(str(note))
         print(f"{event_dir} done")
     print(f"All event results are saved in {result_dir} in their dedicated folder")
 # ----------------------------------------------------------------------

@@ -56,10 +56,6 @@ what's needed :
 	- improve plot_events so we can see the polluted and not polluted events. Improve labelling as well (if labelling is necessary)
 	- show on every plots (in title for exemple, if the event is polluted or not)
 	- check mass defect plot??
-	- scatter plot with (d)temperature and wind visible
-	- Think of a filter to remove crazy high values overall (they are not all qualified as polluted)
-		-> done, simple mask that removes a few values
-	- need to better define "summer" and "winter" events
 
 
 
@@ -86,6 +82,7 @@ Answers to first discussion:
 		-> for sub nm particles, the negative ion production rate seems to be higher than the positive
 
 Answer to second discussion:
+	- compare the total volume of particles with the production rate.
 	- redefine "seasons" using the solar radiation data. Over seasons, we're more interested in the difference between no radiation or radiation.
 	- compute growth rate when possible
 
