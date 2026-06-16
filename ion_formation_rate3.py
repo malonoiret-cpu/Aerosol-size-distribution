@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from typing import Literal
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.patches import Patch
 
 class IonFormation:
     def __init__(self, particle_psd: pd.DataFrame, pos_ion_psd: pd.DataFrame, neg_ion_psd: pd.DataFrame, met_df: pd.DataFrame, df_events : pd.DataFrame = None,       \
@@ -329,19 +330,20 @@ class IonFormation:
         """Calculate the growth rate"""
         return 0
     
-    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges : list, event_list : list, commony = False, T_roll = None):
+    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges:list, study_poll:bool = True, commony:bool = False, T_roll = None):
         """Plot concentration for each bin range given and the wind over time.
         Highlight the events studied with the given event list"""
         if s == 'pos':
             df_conc = self.pos_N_ion
-            main_title = f"Positive ion concentration over the winter"
+            main_title = f"Positive ion concentration and blowing snow events"
         elif s == 'neg':
-            main_title = f"Negative ion concentration over the winter"
+            main_title = f"Negative ion concentration and blowing snow events"
             df_conc = self.neg_N_ion
         else:
             raise ValueError("s must be 'pos' or 'neg'")
         
-        bse_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in event_list]
+        events = self.df_events.loc[:, ['start', 'end']].values.tolist() if study_poll else self.df_events.loc[self.df_events['Pollution'] == False, ['start', 'end']].values.tolist()
+        event_list = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in events]
         
         df_wind = self.met_df['true_wind_velocity']
         df_rad = self.met_df['global_radiation']
@@ -383,7 +385,7 @@ class IonFormation:
             else : ax3.tick_params(axis='y', colors='grey')
 
             ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
-            ax1.set_ylabel("Concentration (dN/dlogDp)", color = 'blue')
+            ax1.set_ylabel("Concentration ($cm^{-3}$)", color = 'blue')
             if col == 0:
                 ax1.set_xlabel("DateTime")
             ax1.grid()
@@ -391,11 +393,15 @@ class IonFormation:
             ax1.set_title(subtitle)
 
             for (start, end), ev_nb in zip(event_list, range(len(event_list))):     # Plot the wind events
-                ax2.axvspan(xmin = start, xmax = end, color = "#087edf", alpha = 0.3)
+                color = "#087edf" if not self.df_events.loc[self.df_events['start'] == start, 'Pollution'].values[0] else "#df7008"
+                ax2.axvspan(xmin = start, xmax = end, color = color, alpha = 0.3)
                 mid = start + (end - start) / 2                      # center of the span
-                ypos = np.max(df_wind) * (1 if ev_nb % 3 == 0 else 0.95 if ev_nb%3 == 1 else 0.9)  # alternate height
-                ax2.text(mid, ypos, str(ev_nb), ha='center', va='top')
+                ypos = np.max(df_wind) * (1 if ev_nb % 3 == 0 else 0.95 if ev_nb%3 == 1 else 0.9)
+                ax2.text(mid, ypos, str(ev_nb), ha='center', va='top')    
+        legend_handles = [Patch(color="#087edf", alpha=0.2, label="Event"),
+                          Patch(color="#df7008", alpha=0.2, label="Polluted event")] if study_poll else [Patch(color="#087edf", alpha=0.2, label="Event")]
 
+        fig.legend(legend_handles, [h.get_label() for h in legend_handles], loc = "upper left")
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()

@@ -210,7 +210,7 @@ print("\t Results computed in the instance res_w")
 
 
 # res.volume_plot('neg', bin_ranges=bin_all, commony=False)
-res_w.plot_events('pos', bin_ranges=[(.75, 31.62)], event_list=bse_list, T_roll='24h')
+res_w.plot_events('pos', bin_ranges=[(.75, 31.62)], study_poll=False, T_roll='24h')
 plt.show()
 
 # res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = '24h')

@@ -107,11 +107,11 @@ def all_res(start, end, result_dir, data_dic, df_events):
     res_dict['global'] = res_w
     print("\t Results computed. Saving the plots...")
 
-    res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], event_list= bse_list, commony=sharey, T_roll='24h')
+    res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], study_poll=True, commony=sharey, T_roll='24h')
     plt.savefig(os.path.join(result_dir, "all_pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.plot_events(s='neg', bin_ranges= [[dia_min,dia_max]], event_list= bse_list, commony=sharey, T_roll='24h')
+    res_w.plot_events(s='neg', bin_ranges= [[dia_min,dia_max]], study_poll=True, commony=sharey, T_roll='24h')
     plt.savefig(os.path.join(result_dir, "all_neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
@@ -212,7 +212,7 @@ def all_res(start, end, result_dir, data_dic, df_events):
 df_events_w = df_events.copy()
 df_events_w = df_events_w[(df_events_w['start'] > pd.to_datetime(start_w)) & (df_events_w['end'] < pd.to_datetime(end_w))]
 
-all_res(start=start_w, end = end_s, result_dir="Results_winter", data_dic=data_dict, df_events= df_events_w)
+all_res(start=start_w, end = end_w, result_dir="Results_winter", data_dic=data_dict, df_events= df_events_w)
 
 
 # ---- Compute summer results -----------------------
