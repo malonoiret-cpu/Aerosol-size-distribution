@@ -32,8 +32,9 @@ diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
 study_poll = False			# Compute and plot 'per event' results for polluted events as well
-add_ras = True				# add non event values on scatter plots
-add_poll = True				# add polluted event on scatter plots
+add_ras = False 			# add non event values on scatter plots
+add_poll = False			# add polluted event on scatter plots
+add_npf = True              # add npf event in plots
 
 sharey = False       # Share y-axis when subplotting (not on heat map)
 ylogscale = False   # log scale on y-axis
@@ -115,35 +116,35 @@ def all_res(start, end, result_dir, data_dic, df_events):
     plt.savefig(os.path.join(result_dir, "all_neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_values('pos', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll)
+    res_w.scatter_values('pos', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_dtemp_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_values('neg', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll)
+    res_w.scatter_values('neg', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_dtemp_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll)
+    res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_wind_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_values('neg', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll)
+    res_w.scatter_values('neg', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_wind_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_values('pos', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll)
+    res_w.scatter_values('pos', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_temperature_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_values('neg', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll)
+    res_w.scatter_values('neg', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_temperature_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_WT('pos', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll)
+    res_w.scatter_WT('pos', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_WT_pos.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 
-    res_w.scatter_WT('neg', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll)
+    res_w.scatter_WT('neg', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll, npf=add_npf)
     plt.savefig(os.path.join(result_dir, "scatter_WT_neg.png"), dpi=qual, bbox_inches='tight')
     plt.close()
 

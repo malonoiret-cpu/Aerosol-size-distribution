@@ -74,20 +74,29 @@ class IonFormation:
         self.N_particle = self.nucmode_particle_psd # [#/cm**3], the concentration of particles between dp_min and dp_max, for each been
         ## -----------------------------------------------------------
 
+        # ---- event tags --------------
+        self.df_events = df_events
+        self.event_tags = self.tag_events()
+        self.theresnpf = 'npf_event' in self.event_tags.values
+
         ## ---- Now the terms of the equation for Q_snow can be calculated ---------------------------------------------------------------
+        fb = 'backward'
+        if diff_order == 2:
+            loseidx = slice(1, None) if fb == 'backward' else slice(None, -1)
+        else : loseidx = slice(1,-1)    # central diff
             ## Compute the members of the Q_snow_pos equation
-        self.dNdp_dt_pos_ion = self._diff(self.pos_N_ion, order=diff_order)
-        self.pos_coag_loss_term = self.calc_coag_loss(ion_psd = self.pos_ion_psd)[:-1] * self.pos_N_ion[:-1]    # T, P dependent
-        self.pos_growth_rate_term = 0
-        self.pos_alpha_term = self.alpha * self.pos_N_ion[:-1] * self.N_neg_ion_smaller[:-1]
-        self.pos_chi_term = self.chi * self.N_particle[:-1] * self.N_pos_ion_smaller[:-1]
+        self.dNdp_dt_pos_ion = self._diff(self.pos_N_ion, order=diff_order, fb=fb)
+        self.pos_coag_loss_term = self.calc_coag_loss(ion_psd = self.pos_ion_psd)[loseidx] * self.pos_N_ion[loseidx]    # T, P dependent
+        self.pos_growth_rate_term = self.calc_growth_rate(self.pos_N_ion)[loseidx]       # already multiplied by N
+        self.pos_alpha_term = self.alpha * self.pos_N_ion[loseidx] * self.N_neg_ion_smaller[loseidx]
+        self.pos_chi_term = self.chi * self.N_particle[loseidx] * self.N_pos_ion_smaller[loseidx]
 
             ## Compute the members of the Q_snow_neg equation
-        self.dNdp_dt_neg_ion = self._diff(self.neg_N_ion, order=diff_order)
-        self.neg_coag_loss_term = self.calc_coag_loss(ion_psd = self.neg_ion_psd)[:-1] * self.neg_N_ion[:-1]
-        self.neg_growth_rate_term = 0
-        self.neg_alpha_term = self.alpha * self.neg_N_ion[:-1] * self.N_pos_ion_smaller[:-1]
-        self.neg_chi_term = self.chi * self.N_particle[:-1] * self.N_neg_ion_smaller[:-1]
+        self.dNdp_dt_neg_ion = self._diff(self.neg_N_ion, order=diff_order, fb = fb)
+        self.neg_coag_loss_term = self.calc_coag_loss(ion_psd = self.neg_ion_psd)[loseidx] * self.neg_N_ion[loseidx]
+        self.neg_growth_rate_term = self.calc_growth_rate(self.neg_N_ion)       # already multiplied by N
+        self.neg_alpha_term = self.alpha * self.neg_N_ion[loseidx] * self.N_pos_ion_smaller[loseidx]
+        self.neg_chi_term = self.chi * self.N_particle[loseidx] * self.N_neg_ion_smaller[loseidx]
         
         self.Q_snow_pos = self.Q_snow_calc(s = 'pos')
         self.Q_snow_neg = self.Q_snow_calc(s = 'neg')
@@ -100,31 +109,33 @@ class IonFormation:
             self.Q_snow_pos = self.Q_snow_pos.rolling(window = smooth_window, center = True).median()
             self.dNdp_dt_pos_ion = self.dNdp_dt_pos_ion.rolling(window = smooth_window, center = True).median()
             self.pos_coag_loss_term = self.pos_coag_loss_term.rolling(window = smooth_window, center = True).median()
-            self.pos_growth_rate_term = 0
+            self.pos_growth_rate_term = self.neg_growth_rate_term.rolling(window = smooth_window, center = True).median()
             self.pos_alpha_term = self.pos_alpha_term.rolling(window = smooth_window, center = True).median()
             self.pos_chi_term = self.pos_chi_term.rolling(window = smooth_window, center = True).median()
 
             self.Q_snow_neg = self.Q_snow_neg.rolling(window = smooth_window, center = True).median()
             self.dNdp_dt_neg_ion = self.dNdp_dt_neg_ion.rolling(window = smooth_window, center = True).median()
             self.neg_coag_loss_term = self.neg_coag_loss_term.rolling(window = smooth_window, center = True).median()
-            self.neg_growth_rate_term = 0
+            self.neg_growth_rate_term = self.pos_growth_rate_term.rolling(window = smooth_window, center = True).median()
             self.neg_alpha_term = self.neg_alpha_term.rolling(window = smooth_window, center = True).median()
             self.neg_chi_term = self.neg_chi_term.rolling(window = smooth_window, center = True).median()
 
         # store the results in dic for plots
         self.dic_pos = {
-                r"$Q_{\mathrm{snow}}$": self.Q_snow_pos,
-                r"$\partial N / \partial t$": self.dNdp_dt_pos_ion,
-                r"Coagulation loss": self.pos_coag_loss_term,
-                r"$\alpha$ term": self.pos_alpha_term,
-                r"$\chi$ term": self.pos_chi_term,
+                r"$Q_{\mathrm{snow}}$"          : self.Q_snow_pos,
+                r"$\partial N / \partial t$"    : self.dNdp_dt_pos_ion,
+                r"Coagulation loss"             : self.pos_coag_loss_term,
+                **({"GR": self.pos_growth_rate_term} if self.theresnpf else {}),
+                r"$\alpha$ term"                : self.pos_alpha_term,
+                r"$\chi$ term"                  : self.pos_chi_term,
             }
         self.dic_neg = {
-                r"$Q_{\mathrm{snow}}$": self.Q_snow_neg,
-                r"$\partial N / \partial t$": self.dNdp_dt_neg_ion,
-                r"Coagulation loss": self.neg_coag_loss_term,
-                r"$\alpha$ term": self.neg_alpha_term,
-                r"$\chi$ term": self.neg_chi_term,
+                r"$Q_{\mathrm{snow}}$"          : self.Q_snow_neg,
+                r"$\partial N / \partial t$"    : self.dNdp_dt_neg_ion,
+                r"Coagulation loss"             : self.neg_coag_loss_term,
+                **({"GR": self.neg_growth_rate_term} if self.theresnpf else {}),
+                r"$\alpha$ term"                : self.neg_alpha_term,
+                r"$\chi$ term"                  : self.neg_chi_term,
             }
         
         threshold = 1.0  # cm-3, adjust to what makes physical sense
@@ -135,10 +146,6 @@ class IonFormation:
             ratio = neg / pos
             ratio = ratio.where(pos.abs() >= threshold, other=np.nan)  # mask near-zero denominators
             self.dic_ratio[name] = ratio
-        
-        # ---- event tags --------------
-        self.df_events = df_events
-        self.event_tags = self.tag_events()
 
 
     def N_smaller(self, psd):
@@ -170,10 +177,10 @@ class IonFormation:
             dt = (t[2:] - t[:-2])[:, None]
             idx = df.index[1:-1]
 
-        elif order == 5:
-            dN = (-N[4:] + 8*N[3:-1] - 8*N[1:-3] + N[:-4])
-            dt = (12 * (t[2:-2] - t[1:-3]))[:, None]  # 12 * dt (uniform spacing assumed)
-            idx = df.index[2:-2]
+        # elif order == 5:
+        #     dN = (-N[4:] + 8*N[3:-1] - 8*N[1:-3] + N[:-4])
+        #     dt = (12 * (t[2:-2] - t[1:-3]))[:, None]  # 12 * dt (uniform spacing assumed)
+        #     idx = df.index[2:-2]
 
         else:
             raise ValueError("order must be 2, 3, or 5")
@@ -181,19 +188,22 @@ class IonFormation:
         return pd.DataFrame(dN / dt, index=idx, columns=df.columns)
 
     def tag_events(self):
-        """Gives a tag for each time stamps (based on Q_snow_pos index) as follow:
+        """Gives a tag for each time stamps (based on pos_N_ion index) as follow:
             - NaN: no event
             - event: during an event without pollution
             - event_poll: during an event qualified as polluted
         If no events are given, no labels are applied."""
-        tags = pd.Series(np.nan, index=self.Q_snow_pos.index, dtype=object)
+        tags = pd.Series(np.nan, index=self.pos_N_ion.index, dtype=object)
 
         if self.df_events is not None:
             for _, row in self.df_events.iterrows():
                 mask = (tags.index >= row['start']) & (tags.index <= row['end'])
-                label = 'event_poll' if row['Pollution'] else 'event'
+                if row['Event Type'] == 'BLOWING SNOW':
+                    label = 'event_poll' if row['Pollution'] else 'event'
+                elif row['Event Type'] == 'npf':
+                    label = 'npf_event'
+                else: continue      # non event time stamps are tagged as NaNs
                 tags[mask] = label
-        
         return tags
 
     def mean_free_path_calc(self, T, P):
@@ -318,7 +328,7 @@ class IonFormation:
                     + self.neg_growth_rate_term \
                     + self.neg_alpha_term       \
                     - self.neg_chi_term
-        
+
         if s == 'all':
             return Q_snow_pos, Q_snow_neg
         if s == 'pos':
@@ -326,9 +336,16 @@ class IonFormation:
         if s == 'neg':
             return Q_snow_neg
         
-    def calc_growth_rate(self):
+    def calc_growth_rate(self, ion_psd: pd.DataFrame):
         """Calculate the growth rate"""
-        return 0
+        bins = ion_psd.columns.to_numpy()
+        delta_dp = np.diff(bins)
+        gr = 1.24 / 3600  # From Matt's notes (there's only one npf event so far). /3600 to convert it into nm.s-1
+        gr_factors = np.append((gr / delta_dp), 0.)      # assume that nothing goes out of the last bin
+
+        npf_mask = self.event_tags == 'npf_event'
+        gr_term = (gr_factors * ion_psd) * npf_mask.values[:,None]
+        return gr_term
     
     def plot_events(self, s: Literal['pos', 'neg'], bin_ranges:list, study_poll:bool = True, commony:bool = False, T_roll = None):
         """Plot concentration for each bin range given and the wind over time.
@@ -519,7 +536,6 @@ class IonFormation:
         
         wind_df = self.met_df['true_wind_velocity']
         wind_mean = wind_df.mean()
-
         temp_mean = self.temperature_series.mean() if self.temperature is None else self.temperature
         
         nplots = len(bin_ranges)                #
@@ -566,7 +582,7 @@ class IonFormation:
 
     def scatter_values(self, s = 'pos', x_data : Literal['wind', 'temperature', 'dtemp'] = 'wind',
                        bin_ranges = [(0.75, 31.62)], commony : bool = False,
-                       ras: bool = False, pollution: bool = False):
+                       ras: bool = False, pollution: bool = False, npf = False):
         
         if x_data == 'wind':
             xvalues_raw = self.met_df['true_wind_velocity'].copy()
@@ -593,6 +609,7 @@ class IonFormation:
         mask_event = self.event_tags == 'event'
         mask_poll = self.event_tags == 'event_poll'
         mask_ras = self.event_tags.isna()
+        mask_npf = self.event_tags == 'npf_event'
 
         nplots = len(bin_ranges)                #
         ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
@@ -603,8 +620,9 @@ class IonFormation:
         for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
             
             Q_snow_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis = 1)
-            if ras: ax.scatter(x_values[mask_ras], Q_snow_sum[mask_ras], color = 'grey', alpha=0.4, s=10, label='no event')
-            if pollution: ax.scatter(x_values[mask_poll], Q_snow_sum[mask_poll], color = 'tomato', alpha=0.6, s=15, label='polluted event')
+            if ras: ax.scatter(x_values[mask_ras], Q_snow_sum[mask_ras], color = 'grey', alpha=.4, s=10, label='no event')
+            if pollution: ax.scatter(x_values[mask_poll], Q_snow_sum[mask_poll], color = 'tomato', alpha=.6, s=15, label='polluted event')
+            if self.theresnpf & npf: ax.scatter(x_values[mask_npf], Q_snow_sum[mask_npf], color = 'green', alpha=0.6, s=15, label='NPF event')
             ax.scatter(x_values[mask_event], Q_snow_sum[mask_event], color = 'blue', alpha=.8, s=15, label='event')
 
             col = idx%ncol  # column index for plotting columns
@@ -622,7 +640,7 @@ class IonFormation:
         
     def scatter_WT(self, s = 'pos',
                        bin_ranges = [(0.75, 31.62)], commony : bool = False,
-                       ras: bool = False, pollution: bool = False):
+                       ras: bool = False, pollution: bool = False, npf = False):
         """Very similar with scatter_values, but scatter temperature against wind, with colors scaled on the production rate"""
 
         if s=='pos':
@@ -644,7 +662,8 @@ class IonFormation:
         mask_event = self.event_tags == 'event'
         mask_poll = self.event_tags == 'event_poll'
         mask_ras = self.event_tags.isna()
-
+        mask_npf = self.event_tags == 'npf_event'
+        
         nplots = len(bin_ranges)                #
         ncol = int(np.ceil(np.sqrt(nplots)))    # Design the subplot matrix
         nrow = int(np.ceil(nplots / ncol))      #
@@ -654,8 +673,9 @@ class IonFormation:
         for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
             
             Q_snow_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis = 1)
-            if ras: ax.scatter(temp[mask_ras], wind[mask_ras], c = Q_snow_sum[mask_ras], alpha=.2, s=15, label='ras')
-            if pollution: ax.scatter(temp[mask_poll], wind[mask_poll], c = Q_snow_sum[mask_poll], alpha=.2, s=15, label='polluted event')
+            if ras: ax.scatter(temp[mask_ras], wind[mask_ras], c = Q_snow_sum[mask_ras], alpha=.2, s=8, label='ras')
+            if pollution: ax.scatter(temp[mask_poll], wind[mask_poll], c = Q_snow_sum[mask_poll], alpha=.2, s=8, label='polluted event')
+            if npf: ax.scatter(temp[mask_npf], wind[mask_npf], c = Q_snow_sum[mask_npf], alpha=.2, s=10, label='npf event')
             ax.scatter(temp[mask_event], wind[mask_event], c = Q_snow_sum[mask_event], alpha=.2, s=15, label='event')
         
             col = idx%ncol  # column index for plotting columns
@@ -673,7 +693,7 @@ class IonFormation:
 
     def scatter_3d(self, s = 'pos',
                        bin_ranges = [(0.75, 31.62)], commony : bool = False,
-                       ras: bool = False, pollution: bool = False):
+                       ras: bool = False, pollution: bool = False, npf:bool = False):
         if s=='pos':
             Q_snow = self.Q_snow_pos
             suptitle = "Positive ions"
@@ -693,6 +713,7 @@ class IonFormation:
         mask_event = self.event_tags == 'event'
         mask_poll = self.event_tags == 'event_poll'
         mask_ras = self.event_tags.isna()
+        mask_npf = self.event_tags == 'npf_event'
 
         nplots = len(bin_ranges)
         ncol = int(np.ceil(np.sqrt(nplots)))
@@ -705,9 +726,10 @@ class IonFormation:
             ax = fig.add_subplot(nrow, ncol, idx + 1, projection='3d')
             Q_sum = Q_snow.loc[:, bin_low:bin_high].sum(axis=1)
 
-            if ras: ax.scatter(wind[mask_ras], temp[mask_ras], Q_sum[mask_ras], color='blue', alpha=0.8, s=15, label='event')
-            if pollution: ax.scatter(wind[mask_poll], temp[mask_poll], Q_sum[mask_poll], color='blue', alpha=0.8, s=15, label='event')
-            ax.scatter(wind[mask_event], temp[mask_event], Q_sum[mask_event], color='blue', alpha=0.8, s=15, label='event')
+            if ras: ax.scatter(wind[mask_ras], temp[mask_ras], Q_sum[mask_ras], color='grey', alpha=.4, s=10, label='ras')
+            if pollution: ax.scatter(wind[mask_poll], temp[mask_poll], Q_sum[mask_poll], color='tomato', alpha=.6, s=10, label='polluted event')
+            if self.theresnpf & npf: ax.scatter(wind[mask_npf], temp[mask_npf], Q_sum[mask_npf], color = 'green', alpha=0.6, s=15, label='NPF event')
+            ax.scatter(wind[mask_event], temp[mask_event], Q_sum[mask_event], color='blue', alpha=.8, s=15, label='event')
             
             ax.set_xlabel("Wind ($m\\cdot s^{-1}$)")
             ax.set_ylabel("Temperature (°C)")

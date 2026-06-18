@@ -209,14 +209,10 @@ print("\t Results computed in the instance res_w")
 # ---------------------------------------------------------------------------------------
 
 
-# res.volume_plot('neg', bin_ranges=bin_all, commony=False)
-res_w.plot_events('pos', bin_ranges=[(.75, 31.62)], study_poll=False, T_roll='30D')
-plt.show()
+# res_w.scatter_values('pos', x_data = 'wind', bin_ranges=bin_all, ras = True, pollution=True, npf = True)
 
-# res_w.plot_events(s = 'pos', bin_ranges=[(.75, 31.62)], event_list=bse_datetime, T_roll = '24h')
-# res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
-# res.plot_members(bin_ranges=bin_all, s = 'neg', commony = True, logsc = ylogscale)
-# res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey)
+
+res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey, ras=False, pollution=False, npf=True)
 # res_w.scatter_3d('neg', bin_ranges=[(.75, .75)], commony=sharey)
 
-# plt.show()
+plt.show()
