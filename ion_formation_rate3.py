@@ -231,9 +231,7 @@ class IonFormation:
 
         # create a subset of the PSD over which the CoagS is calculated, based on input diameters
         nuc_mode_psd = ion_psd.loc[:, self.low_dia:self.high_dia]
-        particle_psd = self.particle_psd.loc[:, self.low_dia:self.high_dia]
-
-        coag_loss_all_sum = []	# list to save the cumulative coagulation loss in the nuc mode for each scan (final list)
+        particle_psd = self.particle_psd    # Use as many bins as possibles (preferably form 1 yo 1000nm, Kulmala et. al.)
 
         # Create arrays containing all bins for both nuc (i) and part (j)
         bins_nuc = nuc_mode_psd.columns.to_numpy()*1e-7			# array, shape (N-i, ), convert nm to cm for calculations
@@ -249,8 +247,8 @@ class IonFormation:
         # upper triangle mask: keeps only j >= i pairs, zeros the rest (replaces j loop range(i, M))
         triu_mask = np.triu(np.ones((N, M), dtype=bool))  # shape (N, M)
 
-        # self-coagulation mask: diagonal where i == j
-        diag_idx = np.arange(min(N, M)) # diagonal indices to apply the mask later
+        # diagonal where i == j (to devide these values by 2)
+        diag_idx = np.arange(min(N, M))
 
         # loop through each SMPS scan (every timestamp) associated with the NPF event
         coag_loss_all_sum = []	# list to save the cumulative coagulation loss in the nuc mode for each scan (final list)
@@ -262,7 +260,7 @@ class IonFormation:
             P = self.pressure if self.pressure is not None else self.pressure_series[timestamp]
 
             mfp = self.mean_free_path_calc(T=T, P=P) * 100 	# mean free path multiplied by 100 to get it in [cm]
-            mu = self.viscosity_calc(T=T) / 100 		# viscosity, divide by 100 to convert [kg/m*s] to [kg/cm*s]
+            mu = self.viscosity_calc(T=T) / 100 	    	# viscosity, divide by 100 to convert [kg/m*s] to [kg/cm*s]
 
             ## Compute values for Kij
             # slip correction factor
@@ -306,7 +304,7 @@ class IonFormation:
             # self-coagulation correction on the diagonal (i == j)
             Jij[diag_idx, diag_idx] /= 2.0
 
-            # Jij = np.nan_to_num(Jij, nan=0.0)                       # fix the NaN issue (ignore NaNs in the sum)
+            Jij = np.nan_to_num(Jij, nan=0.0)                       # fix the NaN issue (ignore NaNs in the sum)
             coag_loss_all_sum.append(Jij.sum(axis=1))
 
         return pd.DataFrame(
@@ -337,7 +335,7 @@ class IonFormation:
             return Q_snow_neg
         
     def calc_growth_rate(self, ion_psd: pd.DataFrame):
-        """Calculate the growth rate"""
+        """Calculate the growth rate term."""
         bins = ion_psd.columns.to_numpy()
         delta_dp = np.diff(bins)
         gr = 1.24 / 3600  # From Matt's notes (there's only one npf event so far). /3600 to convert it into nm.s-1
@@ -423,7 +421,6 @@ class IonFormation:
         fig.autofmt_xdate()
         plt.tight_layout()
 
-        
     def plot_hm_conc(self, s:Literal['pos','neg', 'ratio']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"):
         """Plot the heatmap of the concentrations over the time and the particle size"""
         if s == "pos":
@@ -468,8 +465,7 @@ class IonFormation:
 
         plt.setp(ax1.get_xticklabels(), rotation=30, ha='right')
         plt.tight_layout()
-        
-        
+           
     def plot_hm(self, s:Literal['pos','neg', 'ratio']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
         """Plot Q_snow and its components in an heat map"""
 

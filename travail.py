@@ -159,6 +159,11 @@ nais_ion_neg_10min_w = data_dic['nais_ion_neg_file'].loc[start_w:end_w]
 nais_ion_pos_10min_w = data_dic['nais_ion_pos_file'].loc[start_w:end_w]
 met_10min_w = data_dic['met'].loc[start_w:end_w]
 
+# merge nais and smps
+bin_min_smps = dia_max + .01	# to make sure not to have twice the same column
+smps_10min_tomerge = smps_10min_win.loc[:, dia_max:1000]
+nais_smps_part = pd.concat([nais_part_pos_10min_w, smps_10min_tomerge], axis = 1)
+
 # Cut of the weird values
 def remove_spikes2(df, window='30min', threshold=5):
     """Replace values deviating more than threshold * local_std from the rolling median with NaN"""
@@ -185,34 +190,36 @@ nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
 print("\t Data loaded, computing the results...")
 
-res_w = ifr(nais_part_pos_10min_w, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
+res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
 			diff_order=diff_order, smooth_window=roll_period)
 print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
-# event_number = 6
-# event_dates = bse_datetime[event_number]
-# start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
-# end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
+event_number = 6
+event_dates = bse_datetime[event_number]
+start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
+end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
 
-# nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
-# nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
-# nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
-# met_10min = data_dic['met'].loc[start_ev:end_ev]
+nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
+nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
+nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
+nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
+met_10min = data_dic['met'].loc[start_ev:end_ev]
 
-# res = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
-# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-# 			diff_order=diff_order, smooth_window=roll_period)
-# print("The instance containing the result has been created (res)")
+res = ifr(nais_smps_part_ev, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+			diff_order=diff_order, smooth_window=roll_period)
+print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
 
 # res_w.scatter_values('pos', x_data = 'wind', bin_ranges=bin_all, ras = True, pollution=True, npf = True)
 
 
-res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey, ras=False, pollution=False, npf=True)
+# res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey, ras=False, pollution=False, npf=True)
 # res_w.scatter_3d('neg', bin_ranges=[(.75, .75)], commony=sharey)
 
+banana_plot(res.particle_psd)
 plt.show()

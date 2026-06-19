@@ -85,10 +85,16 @@ def all_res(start, end, result_dir, data_dic, df_events):
     os.makedirs(result_dir)
 
     # ---- load data --------------------------------------------------
+    smps_10min_win = data_dic['smps'].loc[start:end]
     nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start:end]
     nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start:end]
     nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start:end]
     met_10min = data_dic['met'].loc[start:end]
+
+    # merge nais and smps
+    bin_min_smps = dia_max + .01	# to make sure not to have twice the same column
+    smps_10min_tomerge = smps_10min_win.loc[:, bin_min_smps:1000]
+    nais_smps_part = pd.concat([nais_part_pos_10min, smps_10min_tomerge], axis = 1)
 
     if spikes_remove == True:
         nais_part_pos_10min = remove_spikes(nais_part_pos_10min, threshold = 1*10**6)
@@ -102,7 +108,7 @@ def all_res(start, end, result_dir, data_dic, df_events):
     # ---- Compute results for the global period ---------------------------------
     print(f"Computing the global period results")
 
-    res_w = ifr(nais_part_pos_10min, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+    res_w = ifr(nais_smps_part, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
                 low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
                 diff_order=diff_order, smooth_window=roll_period)
     res_dict['global'] = res_w
@@ -154,12 +160,13 @@ def all_res(start, end, result_dir, data_dic, df_events):
     # ---- Compute results for each bse ---------------------------------------
     print(f"Computing results for each events")
     for start_ev, end_ev in bse_list:
-        nais_part_pos_10min_ev = nais_part_pos_10min.loc[start_ev:end_ev]
+        nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
+        # nais_part_pos_10min_ev = nais_part_pos_10min.loc[start_ev:end_ev]
         nais_ion_neg_10min_ev = nais_ion_neg_10min.loc[start_ev:end_ev]
         nais_ion_pos_10min_ev = nais_ion_pos_10min.loc[start_ev:end_ev]
         met_10min_ev = met_10min.loc[start_ev:end_ev]
         
-        res = ifr(nais_part_pos_10min_ev, nais_ion_pos_10min_ev, nais_ion_neg_10min_ev, met_df = met_10min_ev, df_events=df_events,
+        res = ifr(nais_smps_part_ev, nais_ion_pos_10min_ev, nais_ion_neg_10min_ev, met_df = met_10min_ev, df_events=df_events,
                 low_dia = dia_min, high_dia = dia_max, temperature=temperature, pressure=pressure,
                 diff_order=diff_order, smooth_window=roll_period)
         event_name = f"{start_ev.date()}_to_{end_ev.date()}"
