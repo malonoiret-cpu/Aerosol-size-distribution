@@ -408,15 +408,23 @@ class IonFormation:
             ax1.set_title(subtitle)
 
             for (start, end), ev_nb in zip(event_list, range(len(event_list))):     # Plot the wind events
-                color = "#087edf" if not self.df_events.loc[self.df_events['start'] == start, 'Pollution'].values[0] else "#df7008"
+                if self.df_events.loc[self.df_events['start'] == start, 'Event Type'].values[0] == 'BLOWING SNOW':
+                    color = "#087edf" if not self.df_events.loc[self.df_events['start'] == start, 'Pollution'].values[0] else "#df7008"
+                else: color = "#0d8102"
                 ax2.axvspan(xmin = start, xmax = end, color = color, alpha = 0.3)
                 mid = start + (end - start) / 2                      # center of the span
-                ypos = np.max(df_wind) * (1 if ev_nb % 3 == 0 else 0.95 if ev_nb%3 == 1 else 0.9)
-                ax2.text(mid, ypos, str(ev_nb), ha='center', va='top')    
-        legend_handles = [Patch(color="#087edf", alpha=0.2, label="Event"),
+                ypos = np.max(df_wind) * (1 if ev_nb % 4 == 0 else 0.95 if ev_nb%4 == 1 else 0.9 if ev_nb%4 == 2 else 0.85)
+                ax2.text(mid, ypos, str(ev_nb), ha='center', va='top')
+        if self.theresnpf:   
+            legend_handles = [Patch(color="#087edf", alpha=0.2, label="Event"),
+                          Patch(color="#df7008", alpha=0.2, label="Polluted event"),
+                          Patch(color="#0d8102", alpha=0.2, label="NPF event")] if study_poll else [Patch(color="#087edf", alpha=0.2, label="Event"),
+                                                                                                         Patch(color="#0d8102", alpha=0.2, label="NPF event")]
+        else :
+            legend_handles = [Patch(color="#087edf", alpha=0.2, label="Event"),
                           Patch(color="#df7008", alpha=0.2, label="Polluted event")] if study_poll else [Patch(color="#087edf", alpha=0.2, label="Event")]
 
-        fig.legend(legend_handles, [h.get_label() for h in legend_handles], loc = "upper left")
+        fig.legend(legend_handles, [h.get_label() for h in legend_handles], loc = "upper left", ncol = 2)
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()

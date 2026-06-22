@@ -221,5 +221,6 @@ print("The instance containing the result has been created (res)")
 # res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey, ras=False, pollution=False, npf=True)
 # res_w.scatter_3d('neg', bin_ranges=[(.75, .75)], commony=sharey)
 
-banana_plot(res.particle_psd)
+# banana_plot(res.particle_psd)
+res_w.plot_events('pos', bin_ranges=[(0.75, 31.62)], study_poll=True, T_roll='24h')
 plt.show()
