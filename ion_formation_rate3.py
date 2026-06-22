@@ -122,7 +122,7 @@ class IonFormation:
 
         # store the results in dic for plots
         self.dic_pos = {
-                r"$Q_{\mathrm{snow}}$"          : self.Q_snow_pos,
+                r"$Q_{\mathrm{snow}}^+$"          : self.Q_snow_pos,
                 r"$\partial N / \partial t$"    : self.dNdp_dt_pos_ion,
                 r"Coagulation loss"             : self.pos_coag_loss_term,
                 **({"GR": self.pos_growth_rate_term} if self.theresnpf else {}),
@@ -130,7 +130,7 @@ class IonFormation:
                 r"$\chi$ term"                  : self.pos_chi_term,
             }
         self.dic_neg = {
-                r"$Q_{\mathrm{snow}}$"          : self.Q_snow_neg,
+                r"$Q_{\mathrm{snow}}^-$"          : self.Q_snow_neg,
                 r"$\partial N / \partial t$"    : self.dNdp_dt_neg_ion,
                 r"Coagulation loss"             : self.neg_coag_loss_term,
                 **({"GR": self.neg_growth_rate_term} if self.theresnpf else {}),
@@ -146,6 +146,14 @@ class IonFormation:
             ratio = neg / pos
             ratio = ratio.where(pos.abs() >= threshold, other=np.nan)  # mask near-zero denominators
             self.dic_ratio[name] = ratio
+
+        # ---- Color dictionary -----------------
+        self.coldict = {'glob_rad'      : "#313233",
+                        'wind'          : "#db4dcd",
+                        'events'        : "#087edf",
+                        'poll_events'   : "#df7008",
+                        'npf'           : "#0d8102",
+                        'conc'          : 'blue'}
 
 
     def N_smaller(self, psd):
@@ -384,23 +392,23 @@ class IonFormation:
             col = idx%ncol
 
             ax2 = ax1.twinx()   # Plot the wind
-            ax2.plot(df_wind, '-', alpha = 0.5, color = "#da6dd0", label = 'Wind velocity')
+            ax2.plot(df_wind, '-', lw = 0.7, alpha = 0.7, color = self.coldict['wind'], label = 'Wind velocity')
             if col == ncol -1:
-                ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = "#da6dd0")
-                ax2.tick_params(axis='y', colors="#da6dd0")
-            else : ax2.tick_params(axis='y', colors="#da6dd0")
+                ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = self.coldict['wind'])
+                ax2.tick_params(axis='y', colors=self.coldict['wind'])
+            else : ax2.tick_params(axis='y', colors=self.coldict['wind'])
 
             ax3 = ax1.twinx()   # Plot global radiation
             ax3.spines["right"].set_position(("axes", 1.1))  # offset so it doesn't overlap ax2
-            ax3.plot(df_rad, alpha = 0.5, color = 'grey', label = "Global radiation ($W.m^{-2}$)")
+            ax3.plot(df_rad, lw = 0.7, alpha = 0.7, color = self.coldict['glob_rad'], label = "Global radiation ($W.m^{-2}$)")
             ax3.set_ylim(-12.5, 420)
             if col == ncol -1:
-                ax3.set_ylabel("Global radiation ($W.m^{-2}$)", color = 'grey')
-                ax3.tick_params(axis='y', colors='grey')
-            else : ax3.tick_params(axis='y', colors='grey')
+                ax3.set_ylabel("Global radiation ($W.m^{-2}$)", color = self.coldict['glob_rad'])
+                ax3.tick_params(axis='y', colors=self.coldict['glob_rad'])
+            else : ax3.tick_params(axis='y', colors=self.coldict['glob_rad'])
 
-            ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = 'blue', label = 'Concentration')
-            ax1.set_ylabel("Concentration ($cm^{-3}$)", color = 'blue')
+            ax1.plot(df_conc.loc[:, lo:hi].sum(axis=1), '-', color = self.coldict['conc'], label = 'Concentration')
+            ax1.set_ylabel("Concentration ($cm^{-3}$)", color = self.coldict['conc'])
             if col == 0:
                 ax1.set_xlabel("DateTime")
             ax1.grid()
@@ -409,20 +417,20 @@ class IonFormation:
 
             for (start, end), ev_nb in zip(event_list, range(len(event_list))):     # Plot the wind events
                 if self.df_events.loc[self.df_events['start'] == start, 'Event Type'].values[0] == 'BLOWING SNOW':
-                    color = "#087edf" if not self.df_events.loc[self.df_events['start'] == start, 'Pollution'].values[0] else "#df7008"
-                else: color = "#0d8102"
+                    color = self.coldict['events'] if not self.df_events.loc[self.df_events['start'] == start, 'Pollution'].values[0] else self.coldict['poll_events']
+                else: color = self.coldict['npf']
                 ax2.axvspan(xmin = start, xmax = end, color = color, alpha = 0.3)
                 mid = start + (end - start) / 2                      # center of the span
                 ypos = np.max(df_wind) * (1 if ev_nb % 4 == 0 else 0.95 if ev_nb%4 == 1 else 0.9 if ev_nb%4 == 2 else 0.85)
                 ax2.text(mid, ypos, str(ev_nb), ha='center', va='top')
         if self.theresnpf:   
-            legend_handles = [Patch(color="#087edf", alpha=0.2, label="Event"),
-                          Patch(color="#df7008", alpha=0.2, label="Polluted event"),
-                          Patch(color="#0d8102", alpha=0.2, label="NPF event")] if study_poll else [Patch(color="#087edf", alpha=0.2, label="Event"),
-                                                                                                         Patch(color="#0d8102", alpha=0.2, label="NPF event")]
+            legend_handles = [Patch(color=self.coldict['events'], alpha=0.2, label="Event"),
+                          Patch(color=self.coldict['poll_events'], alpha=0.2, label="Polluted event"),
+                          Patch(color=self.coldict['npf'], alpha=0.2, label="NPF event")] if study_poll else [Patch(color=self.coldict['events'], alpha=0.2, label="Event"),
+                                                                                                         Patch(color=self.coldict['npf'], alpha=0.2, label="NPF event")]
         else :
-            legend_handles = [Patch(color="#087edf", alpha=0.2, label="Event"),
-                          Patch(color="#df7008", alpha=0.2, label="Polluted event")] if study_poll else [Patch(color="#087edf", alpha=0.2, label="Event")]
+            legend_handles = [Patch(color=self.coldict['events'], alpha=0.2, label="Event"),
+                          Patch(color=self.coldict['poll_events'], alpha=0.2, label="Polluted event")] if study_poll else [Patch(color=self.coldict['events'], alpha=0.2, label="Event")]
 
         fig.legend(legend_handles, [h.get_label() for h in legend_handles], loc = "upper left", ncol = 2)
         fig.suptitle(main_title)
