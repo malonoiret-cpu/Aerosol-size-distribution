@@ -69,7 +69,7 @@ pressure = 101.3             # [kPa], if None, met_data considered, else conside
 dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = None          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = '1h'          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
@@ -161,7 +161,7 @@ met_10min_w = data_dic['met'].loc[start_w:end_w]
 
 # merge nais and smps
 bin_min_smps = dia_max + .01	# to make sure not to have twice the same column
-smps_10min_tomerge = smps_10min_win.loc[:, dia_max:1000]
+smps_10min_tomerge = smps_10min_win.loc[:, bin_min_smps:1000]
 nais_smps_part = pd.concat([nais_part_pos_10min_w, smps_10min_tomerge], axis = 1)
 
 # Cut of the weird values
@@ -190,10 +190,10 @@ nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
 print("\t Data loaded, computing the results...")
 
-res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
-			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-			diff_order=diff_order, smooth_window=roll_period)
-print("\t Results computed in the instance res_w")
+# res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
+# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+# 			diff_order=diff_order, smooth_window=roll_period)
+# print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # ---- Slice datasets on one event period and compute results -----------------------------
@@ -214,14 +214,6 @@ res = ifr(nais_smps_part_ev, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, 
 print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
-
-# res_w.scatter_values('pos', x_data = 'wind', bin_ranges=bin_all, ras = True, pollution=True, npf = True)
-
-
-# res_w.scatter_3d('pos', bin_ranges=[(.75, .75)], commony=sharey, ras=False, pollution=False, npf=True)
-# res_w.scatter_3d('neg', bin_ranges=[(.75, .75)], commony=sharey)
-
-# banana_plot(res.particle_psd)
-# res_w.plot_events('pos', bin_ranges=[(0.75, 31.62)], study_poll=True, T_roll='24h')
-res.plot_hm_conc('pos')
-plt.show()
+# [(.75, 0.87), (1., 1.78), (2.05,3.65), (4.22, 5.62), (6.49, 10.), (11.55,31.62)]
+# res.plot_members(bin_ranges=bin_all, s = 'neg', commony=True)
+# plt.show()

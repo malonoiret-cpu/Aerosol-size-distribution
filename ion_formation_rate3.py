@@ -587,8 +587,8 @@ class IonFormation:
                 ax2.tick_params(axis='y', colors=color, labelleft=False, labelright=False) #, labelsize=7
 
         # fig.text(0.5, 0., rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
-        fig.legend(lines, labels, loc = "lower center", ncol=len(data_dic))
-        fig.suptitle(main_title)
+        fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
+        # fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
 
