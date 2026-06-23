@@ -122,7 +122,7 @@ class IonFormation:
 
         # store the results in dic for plots
         self.dic_pos = {
-                r"$Q_{\mathrm{snow}}^+$"          : self.Q_snow_pos,
+                r"$Q_{\mathrm{snow}}$"          : self.Q_snow_pos,
                 r"$\partial N / \partial t$"    : self.dNdp_dt_pos_ion,
                 r"Coagulation loss"             : self.pos_coag_loss_term,
                 **({"GR": self.pos_growth_rate_term} if self.theresnpf else {}),
@@ -130,7 +130,7 @@ class IonFormation:
                 r"$\chi$ term"                  : self.pos_chi_term,
             }
         self.dic_neg = {
-                r"$Q_{\mathrm{snow}}^-$"          : self.Q_snow_neg,
+                r"$Q_{\mathrm{snow}}$"          : self.Q_snow_neg,
                 r"$\partial N / \partial t$"    : self.dNdp_dt_neg_ion,
                 r"Coagulation loss"             : self.neg_coag_loss_term,
                 **({"GR": self.neg_growth_rate_term} if self.theresnpf else {}),
