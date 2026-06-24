@@ -8,8 +8,8 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-10-15 00:00:00'
-end_w = '2020-10-01 00:00:00'
+start_w = '2019-11-26 00:00:00'#'2019-10-15 00:00:00'
+end_w = '2019-12-09 00:00:00'
 
 npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
 					['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
@@ -69,7 +69,7 @@ pressure = 101.3             # [kPa], if None, met_data considered, else conside
 dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = '1h'          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = None          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
@@ -190,30 +190,50 @@ nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
 print("\t Data loaded, computing the results...")
 
-# res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
-# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-# 			diff_order=diff_order, smooth_window=roll_period)
-# print("\t Results computed in the instance res_w")
-# -------------------------------------------------------------------------------------------
-
-# ---- Slice datasets on one event period and compute results -----------------------------
-event_number = 6
-event_dates = bse_datetime[event_number]
-start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
-end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
-
-nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
-nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
-nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
-nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
-met_10min = data_dic['met'].loc[start_ev:end_ev]
-
-res = ifr(nais_smps_part_ev, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
 			diff_order=diff_order, smooth_window=roll_period)
-print("The instance containing the result has been created (res)")
+print("\t Results computed in the instance res_w")
+# -------------------------------------------------------------------------------------------
+
+# # ---- Slice datasets on one event period and compute results -----------------------------
+# event_number = 6
+# event_dates = bse_datetime[event_number]
+# start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
+# end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
+
+# nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
+# nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
+# nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
+# nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
+# met_10min = data_dic['met'].loc[start_ev:end_ev]
+
+# res = ifr(nais_smps_part_ev, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+# 			diff_order=diff_order, smooth_window=roll_period)
+# print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
 # [(.75, 0.87), (1., 1.78), (2.05,3.65), (4.22, 5.62), (6.49, 10.), (11.55,31.62)]
-# res.plot_members(bin_ranges=bin_all, s = 'neg', commony=True)
+
+# res_w.plot_members(bin_ranges=bin_all, s = 'neg', commony=False)
+# res_w.plot_members(bin_ranges=bin_all, s = 'pos', commony=False)
+
+# res_w.plot_events(s = 'pos', T_roll='24h')
+# res.plot_hm('pos')
+
+
+## To look at the noise for small bins. Think to set an appropriate time window
+# size = 0.75
+# plt.figure()
+# plt.plot(res_w.pos_N_ion.loc[:, size], label = str(size))
+# plt.plot(res_w.pos_N_ion.loc[:, 2.05], label = '2.05')
+# plt.legend()
+# plt.title('Pos')
+
+# plt.figure()
+# plt.plot(res_w.neg_N_ion.loc[:, size], label = str(size))
+# plt.plot(res_w.neg_N_ion.loc[:, 2.05], label = '2.05')
+# plt.legend()
+# plt.title('Neg')
 # plt.show()

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from typing import Literal
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.dates as mdates
 from matplotlib.patches import Patch
 
 class IonFormation:
@@ -123,7 +124,7 @@ class IonFormation:
         # store the results in dic for plots
         self.dic_pos = {
                 r"$Q_{\mathrm{snow}}$"          : self.Q_snow_pos,
-                r"$\partial N / \partial t$"    : self.dNdp_dt_pos_ion,
+                r"$dN/dt$"    : self.dNdp_dt_pos_ion,
                 r"Coagulation loss"             : self.pos_coag_loss_term,
                 **({"GR": self.pos_growth_rate_term} if self.theresnpf else {}),
                 r"$\alpha$ term"                : self.pos_alpha_term,
@@ -131,7 +132,7 @@ class IonFormation:
             }
         self.dic_neg = {
                 r"$Q_{\mathrm{snow}}$"          : self.Q_snow_neg,
-                r"$\partial N / \partial t$"    : self.dNdp_dt_neg_ion,
+                r"$dN/dt$"    : self.dNdp_dt_neg_ion,
                 r"Coagulation loss"             : self.neg_coag_loss_term,
                 **({"GR": self.neg_growth_rate_term} if self.theresnpf else {}),
                 r"$\alpha$ term"                : self.neg_alpha_term,
@@ -353,7 +354,7 @@ class IonFormation:
         gr_term = (gr_factors * ion_psd) * npf_mask.values[:,None]
         return gr_term
     
-    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges:list, study_poll:bool = True, commony:bool = False, T_roll = None):
+    def plot_events(self, s: Literal['pos', 'neg'], bin_ranges:list = [(0.75, 31.62)], study_poll:bool = True, commony:bool = False, T_roll = None):
         """Plot concentration for each bin range given and the wind over time.
         Highlight the events studied with the given event list"""
         if s == 'pos':
@@ -499,28 +500,32 @@ class IonFormation:
         
         nplots = len(data_dic)
         fig, axes = plt.subplots(
-            nplots, 1, figsize=(15, 2.5 * nplots), sharex=True
+            nplots, 1, figsize=(12, 1.5 * nplots), sharex=True
         )
-
+        label_fontsize = plt.rcParams['axes.labelsize']
         if nplots == 1:
             axes = [axes]
 
-        for ax, (title, df) in zip(axes, data_dic.items()):
+        for i, (ax, (title, df)) in enumerate(zip(axes, data_dic.items())):
         # transpose so: y = size, x = time
             im = ax.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
                 shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
 
-            ax.set_ylabel("Diameter [nm]")
+            # ax.set_ylabel("Diameter [nm]")
             ax.set_title(title)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M %d-%m'))  # <-- date format here
+            ax.xaxis.set_major_locator(mdates.HourLocator(interval=12))
             # plt.colorbar(im, ax=ax, pad=0.01)
 
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="2%", pad=0.1)
             cbar = fig.colorbar(im, cax=cax)
-            cbar.set_label(r"Concentration ($cm^{-3}$)")
+            if i == 2:
+                cbar.set_label(r"Concentration ($cm^{-3}$)", fontsize = label_fontsize)
 
         axes[-1].set_xlabel("DateTime")
-        fig.suptitle(main_title)
+        fig.supylabel("Particle diameter (nm)", fontsize = label_fontsize)
+        # fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
 
@@ -577,7 +582,7 @@ class IonFormation:
             lines, labels = ax.get_legend_handles_labels()
 
             # plot wind
-            color = "#d80ec7"
+            color = self.coldict['wind']
             ax2 = ax.twinx()
             ax2.plot(wind_df, color = color, alpha = 0.5, lw = 0.8, label = "Wind velocity")
             if col == ncol -1:
@@ -588,7 +593,7 @@ class IonFormation:
 
         # fig.text(0.5, 0., rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
         fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
-        # fig.suptitle(main_title)
+        fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
 

@@ -53,9 +53,13 @@ todo
 
 what's needed :
 	- should exe_all.py store results in csv?
-	- improve plot_events so we can see the polluted and not polluted events. Improve labelling as well (if labelling is necessary)
-	- show on every plots (in title for exemple, if the event is polluted or not)
-	- check mass defect plot??
+	- find a way to summarize the results per events, so we can compare them
+		-> for example, integrate the production over the whole event, devide by the total time.
+		-> or, take the maximum production of each events
+		-> then, compare it to average wind or temperature (average?)
+	- study the noise
+		-> about that: the CoagS for subnanometer negative ions reaches very high values even outside the events, but not
+		 dN/dt. Should we consider it as noise then?
 
 
 
