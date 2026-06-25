@@ -71,12 +71,12 @@ for name, path in CLEAN_FILES.items():							# Clean and resample
 for name, path in CLEAN_FILES_raw.items():						# Clean
 	psds[name].to_parquet(path)
 	print(f"{name} done")
-
 met.to_parquet('Data-clean/polarstern_weather_clean.parquet')
+
 met_res = met.resample(resample_time).median()
 met_res.to_parquet('Data-clean/polarstern_weather_clean_10min.parquet')
 
-# Process to read and treat Matthew's notes. Done it once and it's enough, I saved a clean csv in data, with the added 'Pollution' column
+# ---- Process to read and treat Matthew's notes --------------------------------------------------------------------------------------------
 df_events = pd.read_csv('Data/days_of_interest_notes_20240214.csv', header=2, sep = ';')
 df_events['start [mm/dd/yy hh:mm]'] = pd.to_datetime(df_events['start [mm/dd/yy hh:mm]'], format='mixed').dt.strftime('%Y-%m-%d %H:%M:%S')
 df_events['end [mm/dd/yy hh:mm]'] = pd.to_datetime(df_events['end [mm/dd/yy hh:mm]'], format='mixed').dt.strftime('%Y-%m-%d %H:%M:%S')
@@ -84,7 +84,6 @@ df_events = df_events.loc[(df_events['Event Type'] == 'BLOWING SNOW'), ['start [
 df_events.columns = ['start', 'end', 'Event Type', 'notes']
 df_events['Pollution'] = [True, False, False, False,  True, False, False,  True, False,  True,  True, True, True,  True , True, False, False,  True, False,
 							 False, False, False, False,  True, False,  True,  True,  True,  True,  True, False,  True,  True,  True, False,  True, False, False, False]
-
 # add midsummer event
 new_row = pd.DataFrame(
     [{
@@ -95,8 +94,9 @@ new_row = pd.DataFrame(
         'Pollution': False
     }])
 df_events = pd.concat([df_events, new_row], ignore_index=True)
-print(df_events)
 df_events.to_csv('Data/days-of-interest.csv', sep = ';')
+print("days-of-interest.csv done")
+# ---------------------------------------------------------------------------------------------------------------------------------------
 
 data_dir = os.path.join(cwd, 'Data-clean')
 print(f"All files have succesfully been treated. The clean CSVs are in {data_dir}")

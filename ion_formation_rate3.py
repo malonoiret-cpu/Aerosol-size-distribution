@@ -483,17 +483,22 @@ class IonFormation:
         plt.setp(ax1.get_xticklabels(), rotation=30, ha='right')
         plt.tight_layout()
            
-    def plot_hm(self, s:Literal['pos','neg', 'ratio']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
+    def plot_hm(self, s:Literal['pos','neg', 'ratio']='pos', bin_range:tuple = None, vmini = None, vmaxi = None, cmap = "RdBu_r"): #viridis?
         """Plot Q_snow and its components in an heat map"""
 
+        if bin_range is None:
+            binlow = self.low_dia
+            binhigh = self.high_dia
+        else: binlow, binhigh = bin_range
+
         if s == "pos":
-            main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"
+            main_title = f"Positively charged particles ({binlow} to {binhigh} nm)"
             data_dic = self.dic_pos
         elif s == "neg":
-            main_title = f"Negatively charged particles ({self.low_dia} to {self.high_dia} nm)"
+            main_title = f"Negatively charged particles ({binlow} to {binhigh} nm)"
             data_dic = self.dic_neg
         elif s == "ratio":
-            main_title = f"Positive / Negative ({self.low_dia} to {self.high_dia} nm)"
+            main_title = f"Positive / Negative ({binlow} to {binhigh} nm)"
             df = self.dic_ratio
         else:
             raise ValueError("s must be 'pos', 'neg' or 'ratio'")
@@ -507,7 +512,8 @@ class IonFormation:
             axes = [axes]
 
         for i, (ax, (title, df)) in enumerate(zip(axes, data_dic.items())):
-        # transpose so: y = size, x = time
+
+            df = df.loc[:, binlow:binhigh]
             im = ax.pcolormesh(df.index, df.columns, df.T,           # transpose DataFrame to have time on the x-axis
                 shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
 
@@ -525,7 +531,7 @@ class IonFormation:
 
         axes[-1].set_xlabel("DateTime")
         fig.supylabel("Particle diameter (nm)", fontsize = label_fontsize)
-        # fig.suptitle(main_title)
+        fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
 
@@ -816,3 +822,82 @@ class IonFormation:
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
+
+
+    def boxplot_events(self, s='pos', x_data='wind', bin_ranges=[(0.75, 31.62)],
+                    event_list=None, width_frac=0.04, commony=False, showfliers=False):
+        """
+        Boxplot the distribution of Q_snow during each event, positioned along
+        the x-axis by a characteristic value of that event (e.g. mean wind speed).
+
+        Inputs:
+            - s: 'pos' or 'neg'
+            - x_data: 'wind', 'temperature', or 'dtemp' — characterizes the x position
+            - bin_ranges: list of (lo, hi) tuples, one subplot per range
+            - event_list: list of (start, end) tuples defining each event
+            - width_frac: box width as a fraction of the x-axis range (avoids overlap)
+            - showfliers: whether to show outlier points beyond the whiskers
+        """
+        if event_list is None:
+            raise ValueError("event_list must be provided (list of (start, end) tuples)")
+
+        if s == 'pos':
+            Q_snow = self.Q_snow_pos
+            suptitle = "Positive ions"
+        elif s == 'neg':
+            Q_snow = self.Q_snow_neg
+            suptitle = "Negative ions"
+        else:
+            raise ValueError("s must be 'pos' or 'neg'")
+
+        xlabels = {'wind': r"Wind velocity ($m\cdot s^{-1}$)",
+                'temperature': "Temperature (°C)",
+                'dtemp': r"dT/dt (°C$\cdot h^{-1}$)"}
+
+        nplots = len(bin_ranges)
+        ncol = int(np.ceil(np.sqrt(nplots)))
+        nrow = int(np.ceil(nplots / ncol))
+        fig, axs = plt.subplots(nrow, ncol, figsize=(ncol*6, nrow*4),
+                                sharex=True, sharey=commony, squeeze=False)
+
+        for idx, (ax, (bin_low, bin_high)) in enumerate(zip(axs.flatten(), bin_ranges)):
+
+            box_data, x_positions = [], []
+
+            for start, end in event_list:
+                Q_ev = Q_snow.loc[start:end, bin_low:bin_high].sum(axis=1).dropna()
+                if Q_ev.empty:
+                    continue
+
+                if x_data == 'wind':
+                    x_val = self.met_df.loc[start:end, 'true_wind_velocity'].mean()
+                elif x_data == 'temperature':
+                    x_val = self.met_df.loc[start:end, 'air_temperature'].mean()
+                elif x_data == 'dtemp':
+                    dtemp = self._diff(self.met_df.loc[start:end, ['air_temperature']])
+                    x_val = (dtemp['air_temperature'] * 6).mean()
+                else:
+                    raise ValueError("x_data must be 'wind', 'temperature' or 'dtemp'")
+
+                box_data.append(Q_ev.values)
+                x_positions.append(x_val)
+
+            if not box_data:
+                continue
+
+            x_range = max(x_positions) - min(x_positions)
+            width = width_frac * x_range if x_range > 0 else 0.1
+
+            ax.boxplot(box_data, positions=x_positions, widths=width,
+                    patch_artist=True, showfliers=showfliers,
+                    boxprops=dict(facecolor='lightblue', alpha=0.7))
+
+            ax.set_xlabel(xlabels[x_data])
+            ax.set_ylabel("Production rate [$cm^{-3}.s^{-1}$]")
+            ax.grid()
+            subtitle = f"{bin_low} nm" if bin_low == bin_high else f"{bin_low} to {bin_high} nm"
+            ax.set_title(subtitle)
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+
+        fig.suptitle(suptitle)
+        fig.tight_layout()
