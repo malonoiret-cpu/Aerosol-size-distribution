@@ -24,7 +24,7 @@ spikes_remove = True		# Remove the pikes in concentration series according to th
 temperature = None          # [K], if None, met_data considered, else T considered as constant (298K was default)
 pressure = None             # [kPa], if None, met_data considered, else P considered as constant (101.3 was default)
 
-dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
+dia_min = 1.54               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
 roll_period = None          # '2h', if not None, apply a rolling median over the time given to smooth the data

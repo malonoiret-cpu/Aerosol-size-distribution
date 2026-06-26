@@ -473,7 +473,7 @@ class IonFormation:
 
         ax2 = ax1.twinx()
         ax2.spines["right"].set_position(("axes", 1.15))
-        # ax2.plot(wind_df, '-', color = 'tomato', lw = 0.7, label = 'Daily wind')
+        ax2.plot(wind_df, '-', color = 'tomato', lw = 0.7, label = 'Daily wind')
         ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
         ax2.tick_params(axis='y', colors='tomato')
 
