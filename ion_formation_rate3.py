@@ -438,32 +438,42 @@ class IonFormation:
         fig.autofmt_xdate()
         plt.tight_layout()
 
-    def plot_hm_conc(self, s:Literal['pos','neg', 'ratio']='pos', vmini = None, vmaxi = None, cmap = "RdBu_r"):
+    def plot_hm_conc(self, s:Literal['pos','neg', 'ratio']='pos', bin_range:tuple = None, vmini = None, vmaxi = None, cmap = "RdBu_r", ax = None):
         """Plot the heatmap of the concentrations over the time and the particle size"""
+
+        if bin_range is None:
+            binlow = self.low_dia
+            binhigh = self.high_dia
+        else: binlow, binhigh = bin_range
+
         if s == "pos":
-            main_title = f"Positively charged particles ({self.low_dia} to {self.high_dia} nm)"
+            main_title = f"Positively charged particles ({binlow} to {binhigh} nm)"
             df = self.pos_N_ion
         elif s == "neg":
-            main_title = f"Negatively charged particles ({self.low_dia} to {self.high_dia} nm)"
+            main_title = f"Negatively charged particles ({binlow} to {binhigh} nm)"
             df = self.neg_N_ion
         elif s == "ratio":
-            main_title = f"Negative / Positive ({self.low_dia} to {self.high_dia} nm)"
+            main_title = f"Negative / Positive ({binlow} to {binhigh} nm)"
             df = self.neg_N_ion / self.pos_N_ion
             df = df.where(self.pos_N_ion.abs() >= 1, other=np.nan)  # mask near-zero denominators
         else:
             raise ValueError("s must be 'pos', 'neg' or 'ratio")
         
         wind_df = self.met_df['true_wind_velocity']
-
+        df = df.loc[:, binlow:binhigh]
         if self.smooth_window is not None:  # smooth data if asked
             df = df.rolling(window=self.smooth_window, center = True).mean()
             wind_df = wind_df.rolling(window=self.smooth_window, center = True).mean()
         
-        fig, ax1 = plt.subplots(figsize = (8,5))
+        if ax is None:
+            fig, ax1 = plt.subplots(figsize=(8,5))
+        else:
+            ax1 = ax
+            fig = ax.figure
 
         ax2 = ax1.twinx()
         ax2.spines["right"].set_position(("axes", 1.15))
-        ax2.plot(wind_df, '-', color = 'tomato', lw = 0.7, label = 'Daily wind')
+        # ax2.plot(wind_df, '-', color = 'tomato', lw = 0.7, label = 'Daily wind')
         ax2.set_ylabel("Wind velocity ($m.s^{-1}$)", color = 'tomato')
         ax2.tick_params(axis='y', colors='tomato')
 

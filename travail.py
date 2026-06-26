@@ -8,10 +8,10 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-# start_w = '2019-10-15 00:00:00'		# '2019-11-26 00:00:00'
-# end_w = '2020-10-01 00:00:00'		# '2019-12-09 00:00:00'
-start_w = '2020-06-18 00:00:00'
-end_w = '2020-06-25 00:00:00'
+start_w = '2019-10-15 00:00:00'		# '2019-11-26 00:00:00'
+end_w = '2020-10-01 00:00:00'		# '2019-12-09 00:00:00'
+# start_w = '2020-06-18 00:00:00'
+# end_w = '2020-06-25 00:00:00'
 
 npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
 					['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
@@ -199,21 +199,21 @@ print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # # ---- Slice datasets on one event period and compute results -----------------------------
-# event_number = 6
-# event_dates = bse_datetime[event_number]
-# start_ev = event_dates[0] 		# '2019/12/20 00:00:00'
-# end_ev = event_dates[1] 		# '2019/12/21 00:00:00'
+event_number = 6
+event_dates = bse_datetime[event_number]
+start_ev = '2020-06-19 00:00:00'	#event_dates[0] 		# '2019/12/20 00:00:00'
+end_ev = '2020-06-23 00:00:00'		#event_dates[1] 		# '2019/12/21 00:00:00'
 
-# nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
-# nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
-# nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
-# nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
-# met_10min = data_dic['met'].loc[start_ev:end_ev]
+nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
+nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
+nais_ion_neg_10min = data_dic['nais_ion_neg_file'].loc[start_ev:end_ev]
+nais_ion_pos_10min = data_dic['nais_ion_pos_file'].loc[start_ev:end_ev]
+met_10min = data_dic['met'].loc[start_ev:end_ev]
 
-# res = ifr(nais_smps_part_ev, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
-# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-# 			diff_order=diff_order, smooth_window=roll_period)
-# print("The instance containing the result has been created (res)")
+res = ifr(nais_smps_part_ev, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+			diff_order=diff_order, smooth_window=roll_period)
+print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
 # ---- Characterize all events -----------------------------------------------------------
@@ -318,10 +318,18 @@ print("\t Results computed in the instance res_w")
 # plt.gcf().autofmt_xdate()
 # plt.title('Neg')
 # plt.show()
-sizes = [.75, .87, 1., 1.54, 2.05]
+sizes = [.75, .87, 1., 1.54, 2.05, 10.]
+start_noise = '2020-06-19 00:00:00'
+end_noise = '2020-06-23 00:00:00'
+resample_time = '2h'
+df_pos = res_w.pos_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
+df_neg = res_w.neg_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
+
 fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12,6), sharex=True)
-res_w.pos_N_ion.loc[:, sizes].plot(ax = ax1, alpha = 0.8)
-res_w.neg_N_ion.loc[:, sizes].plot(ax = ax2, alpha = 0.8)
+df_pos.plot(ax = ax1, alpha = 0.8)
+ax1.set_title("pos")
+df_neg.plot(ax = ax2, alpha = 0.8)
+ax2.set_title("neg")
 
 for ax in (ax1, ax2):
 	ax.legend()
@@ -329,5 +337,11 @@ ax1.set_ylabel("Concentration ($cm^{-3}$)")
 ax1.set_xlabel("Datetime")
 fig.autofmt_xdate()
 fig.suptitle("Concentrations of ions before, during and after midsummer event")
+
+fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6))
+res.plot_hm_conc(s= 'pos', bin_range=(.75, 31.62), ax=ax1)
+res.plot_hm_conc(s= 'neg', bin_range=(.75, 31.62), ax=ax2)
+# res_w.plot_hm_conc(s = 'pos', bin_range=(1.54, 31.62), vmaxi=500)
+# res_w.plot_hm_conc(s = 'pos', bin_range=(.75, 31.62))
 
 plt.show()
