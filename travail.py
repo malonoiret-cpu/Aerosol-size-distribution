@@ -319,11 +319,15 @@ print("\t Results computed in the instance res_w")
 # plt.title('Neg')
 # plt.show()
 sizes = [.75, .87, 1., 1.54, 2.05]
-fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12,6))
+fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12,6), sharex=True)
 res_w.pos_N_ion.loc[:, sizes].plot(ax = ax1, alpha = 0.8)
 res_w.neg_N_ion.loc[:, sizes].plot(ax = ax2, alpha = 0.8)
 
 for ax in (ax1, ax2):
 	ax.legend()
+ax1.set_ylabel("Concentration ($cm^{-3}$)")
+ax1.set_xlabel("Datetime")
 fig.autofmt_xdate()
+fig.suptitle("Concentrations of ions before, during and after midsummer event")
+
 plt.show()
