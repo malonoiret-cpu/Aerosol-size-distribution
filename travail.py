@@ -8,8 +8,10 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-10-15 00:00:00'		# '2019-11-26 00:00:00'
-end_w = '2020-10-01 00:00:00'		# '2019-12-09 00:00:00'
+# start_w = '2019-10-15 00:00:00'		# '2019-11-26 00:00:00'
+# end_w = '2020-10-01 00:00:00'		# '2019-12-09 00:00:00'
+start_w = '2020-06-18 00:00:00'
+end_w = '2020-06-25 00:00:00'
 
 npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
 					['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
@@ -190,10 +192,10 @@ nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
 print("\t Data loaded, computing the results...")
 
-# res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
-# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-# 			diff_order=diff_order, smooth_window=roll_period)
-# print("\t Results computed in the instance res_w")
+res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
+			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+			diff_order=diff_order, smooth_window=roll_period)
+print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # # ---- Slice datasets on one event period and compute results -----------------------------
@@ -215,71 +217,71 @@ print("\t Data loaded, computing the results...")
 # ---------------------------------------------------------------------------------------
 
 # ---- Characterize all events -----------------------------------------------------------
-study_poll = True
-df_sel = df_events if study_poll else df_events.loc[df_events['Pollution'] == False]
-bse_list = df_sel.loc[:, ['start', 'end', 'Event Type', 'Pollution']].values.tolist()
-binmin = 1.
-binmax = 10.
+# study_poll = True
+# df_sel = df_events if study_poll else df_events.loc[df_events['Pollution'] == False]
+# bse_list = df_sel.loc[:, ['start', 'end', 'Event Type', 'Pollution']].values.tolist()
+# binmin = 1.
+# binmax = 10.
 
-def time_average(Q):
-	t_seconds = (Q.index - Q.index[0]).total_seconds().to_numpy()
-	integral = np.trapezoid(Q.to_numpy(), t_seconds)   # [#/cm^3], total ions formed per cm3 over the event
-	total_time = t_seconds[-1] - t_seconds[0]
+# def time_average(Q):
+# 	t_seconds = (Q.index - Q.index[0]).total_seconds().to_numpy()
+# 	integral = np.trapezoid(Q.to_numpy(), t_seconds)   # [#/cm^3], total ions formed per cm3 over the event
+# 	total_time = t_seconds[-1] - t_seconds[0]
 
-	return integral / total_time
+# 	return integral / total_time
 
-res_dict = {}
-event_info = {}
-for start_ev, end_ev, event_type, poll in bse_list:
+# res_dict = {}
+# event_info = {}
+# for start_ev, end_ev, event_type, poll in bse_list:
 
-	event_name = f"{start_ev.date()}_to_{end_ev.date()}"
+# 	event_name = f"{start_ev.date()}_to_{end_ev.date()}"
 
-	nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
-	nais_ion_pos_10min_ev = nais_ion_pos_10min_w.loc[start_ev:end_ev]
-	nais_ion_neg_10min_ev = nais_ion_neg_10min_w.loc[start_ev:end_ev]
-	met_10min_ev = met_10min_w.loc[start_ev:end_ev]
+# 	nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
+# 	nais_ion_pos_10min_ev = nais_ion_pos_10min_w.loc[start_ev:end_ev]
+# 	nais_ion_neg_10min_ev = nais_ion_neg_10min_w.loc[start_ev:end_ev]
+# 	met_10min_ev = met_10min_w.loc[start_ev:end_ev]
 
-	res = ifr(nais_smps_part_ev, nais_ion_pos_10min_ev, nais_ion_neg_10min_ev, met_10min_ev, df_events=df_events,
-			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-			diff_order=diff_order, smooth_window=roll_period)
+# 	res = ifr(nais_smps_part_ev, nais_ion_pos_10min_ev, nais_ion_neg_10min_ev, met_10min_ev, df_events=df_events,
+# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+# 			diff_order=diff_order, smooth_window=roll_period)
 	
-	res_dict[event_name] = res
-	event_info[event_name] = {'Event Type': event_type, 'Pollution': poll}
+# 	res_dict[event_name] = res
+# 	event_info[event_name] = {'Event Type': event_type, 'Pollution': poll}
 
-reduced_dict = {}
-result_df = pd.DataFrame(columns=['Q_pos_mean', 'Q_neg_mean', 'median_wind', 'median_temp', 'Event Type', 'Pollution', 'color'])
-for name, res in res_dict.items():
-	Q_pos = res.Q_snow_pos.loc[:, binmin:binmax].sum(axis=1).dropna()
-	Q_neg = res.Q_snow_neg.loc[:, binmin:binmax].sum(axis=1).dropna()
-	wind_median = res.met_df['true_wind_velocity'].median()
-	temp_median = res.met_df['air_temperature'].median()
+# reduced_dict = {}
+# result_df = pd.DataFrame(columns=['Q_pos_mean', 'Q_neg_mean', 'median_wind', 'median_temp', 'Event Type', 'Pollution', 'color'])
+# for name, res in res_dict.items():
+# 	Q_pos = res.Q_snow_pos.loc[:, binmin:binmax].sum(axis=1).dropna()
+# 	Q_neg = res.Q_snow_neg.loc[:, binmin:binmax].sum(axis=1).dropna()
+# 	wind_median = res.met_df['true_wind_velocity'].median()
+# 	temp_median = res.met_df['air_temperature'].median()
 
-	info = event_info[name]
-	color = 'green' if info['Event Type']=='npf' else 'tomato' if info['Pollution'] else 'blue'
-	newrow = pd.DataFrame([{'Q_pos_mean' 	: time_average(Q_pos),
-						 'Q_neg_mean'		: time_average(Q_neg),
-						 'median_wind'		: wind_median,
-						 'median_temp'		: temp_median,
-						 'Event Type'		: info['Event Type'],
-						 'Pollution'		: info['Pollution'],
-						 'color'			: color}], index = [name])
-	result_df = pd.concat([result_df, newrow], ignore_index=True)
+# 	info = event_info[name]
+# 	color = 'green' if info['Event Type']=='npf' else 'tomato' if info['Pollution'] else 'blue'
+# 	newrow = pd.DataFrame([{'Q_pos_mean' 	: time_average(Q_pos),
+# 						 'Q_neg_mean'		: time_average(Q_neg),
+# 						 'median_wind'		: wind_median,
+# 						 'median_temp'		: temp_median,
+# 						 'Event Type'		: info['Event Type'],
+# 						 'Pollution'		: info['Pollution'],
+# 						 'color'			: color}], index = [name])
+# 	result_df = pd.concat([result_df, newrow], ignore_index=True)
 
-x_data = 'median_wind'
-plt.figure()
-for color, label in [('green', 'NPF'), ('tomato', 'Polluted'), ('blue', 'Other')]:
-    subset = result_df[result_df['color'] == color]
-    plt.scatter(subset[x_data], subset['Q_pos_mean'], color=color, label=label)
+# x_data = 'median_wind'
+# plt.figure()
+# for color, label in [('green', 'NPF'), ('tomato', 'Polluted'), ('blue', 'Other')]:
+#     subset = result_df[result_df['color'] == color]
+#     plt.scatter(subset[x_data], subset['Q_pos_mean'], color=color, label=label)
 
-plt.xlabel(x_data)
-plt.ylabel('Q_pos_mean')
-plt.legend()
+# plt.xlabel(x_data)
+# plt.ylabel('Q_pos_mean')
+# plt.legend()
 
 
-x_data = 'median_wind'
-plt.figure()
-plt.scatter(result_df[x_data], result_df['Q_pos_mean'])
-plt.show()
+# x_data = 'median_wind'
+# plt.figure()
+# plt.scatter(result_df[x_data], result_df['Q_pos_mean'])
+# plt.show()
 # -------------------------------------------------------------------------------------------------
 
 
@@ -303,14 +305,25 @@ plt.show()
 ## To look at the noise for small bins. Remember to set an appropriate time window
 # size = 0.75
 # plt.figure()
-# plt.plot(res_w.pos_N_ion.loc[:, size], label = str(size))
-# plt.plot(res_w.pos_N_ion.loc[:, 2.05], label = '2.05')
+# # plt.plot(res_w.pos_N_ion.loc[:, size], label = str(size))
+# plt.plot(res_w.pos_N_ion.loc[:, 2.05:10.], label = )
 # plt.legend()
+# plt.gcf().autofmt_xdate()
 # plt.title('Pos')
 
 # plt.figure()
 # plt.plot(res_w.neg_N_ion.loc[:, size], label = str(size))
 # plt.plot(res_w.neg_N_ion.loc[:, 2.05], label = '2.05')
 # plt.legend()
+# plt.gcf().autofmt_xdate()
 # plt.title('Neg')
 # plt.show()
+sizes = [.75, .87, 1., 1.54, 2.05]
+fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12,6))
+res_w.pos_N_ion.loc[:, sizes].plot(ax = ax1, alpha = 0.8)
+res_w.neg_N_ion.loc[:, sizes].plot(ax = ax2, alpha = 0.8)
+
+for ax in (ax1, ax2):
+	ax.legend()
+fig.autofmt_xdate()
+plt.show()
