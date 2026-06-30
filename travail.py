@@ -93,14 +93,36 @@ def all_bin_size(bins):
 		bin_ranges.append((size, size))
 	return bin_ranges
 
-bins = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
+bins_all = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 		3.16,  3.65,  4.22,  4.87,  5.62,  6.49,   7.5,  8.66,  10.0, 11.55,
 		13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
 
-bin_ranges = [(0.75,  31.62), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]   # for grouped subplots
-bin_all = all_bin_size(bins)    # for unique bin subplots
-bin_all = bin_all[0:19] # + [(11.55, 31.62)]
+def set_bin_all(all_bins, stop_bin = dia_max, dia_min = dia_min, group_big:bool = True, max_bins = 19):
+	"""Create a list with desired bins for plots.
+    Limite the number of bins to max_bins for clarity"""
+	if dia_min in all_bins:
+		lower_bin = bins_all.index(dia_min)
+	else:
+		print('dia_min is not in the colums bins')
+		lower_bin = 0
 
+	if stop_bin in all_bins: 
+		stop_bin_idx = all_bins.index(stop_bin)
+		if stop_bin == all_bins[-1]:
+			group_big = False
+	elif group_big: stop_bin_idx = max_bins
+	else: stop_bin_idx = len(all_bins)-1
+
+	bins = all_bins[lower_bin:stop_bin_idx+1]
+	bin_all = [(size, size) for size in bins]
+
+	if group_big:
+		bin_all += [(all_bins[stop_bin_idx+1], all_bins[len(all_bins)-1])]    # Group the bigger ones which give the same results for clearer plot
+
+	return bin_all
+
+bin_all = set_bin_all(bins_all, stop_bin=11.55, dia_min=dia_min, group_big=True)
+print(bin_all)
 qual = 150              # Output plots quality
 sharey = False          # Share y-axis when subplotting (not on heat map)
 ylogscale = False       # log scale on y-axis
@@ -217,21 +239,21 @@ print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
 # ---- Characterize all events -----------------------------------------------------------
-# study_poll = True
-# df_sel = df_events if study_poll else df_events.loc[df_events['Pollution'] == False]
-# bse_list = df_sel.loc[:, ['start', 'end', 'Event Type', 'Pollution']].values.tolist()
-# binmin = 1.
-# binmax = 10.
+study_poll = False
+df_sel = df_events if study_poll else df_events.loc[df_events['Pollution'] == False]
+bse_list = df_sel.loc[:, ['start', 'end', 'Event Type', 'Pollution']].values.tolist()
+binmin = 1.
+binmax = 10.
 
-# def time_average(Q):
-# 	t_seconds = (Q.index - Q.index[0]).total_seconds().to_numpy()
-# 	integral = np.trapezoid(Q.to_numpy(), t_seconds)   # [#/cm^3], total ions formed per cm3 over the event
-# 	total_time = t_seconds[-1] - t_seconds[0]
+def time_average(Q):
+	t_seconds = (Q.index - Q.index[0]).total_seconds().to_numpy()
+	integral = np.trapezoid(Q.to_numpy(), t_seconds)   # [#/cm^3], total ions formed per cm3 over the event
+	total_time = t_seconds[-1] - t_seconds[0]
 
-# 	return integral / total_time
+	return integral / total_time
 
-# res_dict = {}
-# event_info = {}
+res_dict = {}
+event_info = {}
 # for start_ev, end_ev, event_type, poll in bse_list:
 
 # 	event_name = f"{start_ev.date()}_to_{end_ev.date()}"
@@ -267,7 +289,7 @@ print("The instance containing the result has been created (res)")
 # 						 'color'			: color}], index = [name])
 # 	result_df = pd.concat([result_df, newrow], ignore_index=True)
 
-# x_data = 'median_wind'
+# x_data = 'median_temp'
 # plt.figure()
 # for color, label in [('green', 'NPF'), ('tomato', 'Polluted'), ('blue', 'Other')]:
 #     subset = result_df[result_df['color'] == color]
@@ -302,45 +324,31 @@ print("The instance containing the result has been created (res)")
 
 
 
-## To look at the noise for small bins. Remember to set an appropriate time window
-# size = 0.75
-# plt.figure()
-# # plt.plot(res_w.pos_N_ion.loc[:, size], label = str(size))
-# plt.plot(res_w.pos_N_ion.loc[:, 2.05:10.], label = )
-# plt.legend()
-# plt.gcf().autofmt_xdate()
-# plt.title('Pos')
+# To look at the noise for small bins. Remember to set an appropriate time window
 
-# plt.figure()
-# plt.plot(res_w.neg_N_ion.loc[:, size], label = str(size))
-# plt.plot(res_w.neg_N_ion.loc[:, 2.05], label = '2.05')
-# plt.legend()
-# plt.gcf().autofmt_xdate()
-# plt.title('Neg')
-# plt.show()
-sizes = [.75, .87, 1., 1.54, 2.05, 10.]
-start_noise = '2020-06-19 00:00:00'
-end_noise = '2020-06-23 00:00:00'
-resample_time = '2h'
-df_pos = res_w.pos_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
-df_neg = res_w.neg_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
+# sizes = [.75, .87, 1., 1.54, 2.05, 10.]
+# start_noise = '2019-12-01 00:00:00'
+# end_noise = '2019-12-09 00:00:00'
+# resample_time = '2h'
+# # df_pos = res_w.pos_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
+# # df_neg = res_w.neg_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
 
-fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12,6), sharex=True)
-df_pos.plot(ax = ax1, alpha = 0.8)
-ax1.set_title("pos")
-df_neg.plot(ax = ax2, alpha = 0.8)
-ax2.set_title("neg")
+# # fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12,6), sharex=True)
+# # df_pos.plot(ax = ax1, alpha = 0.8)
+# # ax1.set_title("pos")
+# # df_neg.plot(ax = ax2, alpha = 0.8)
+# # ax2.set_title("neg")
 
-for ax in (ax1, ax2):
-	ax.legend()
-ax1.set_ylabel("Concentration ($cm^{-3}$)")
-ax1.set_xlabel("Datetime")
-fig.autofmt_xdate()
-fig.suptitle("Concentrations of ions before, during and after midsummer event")
+# # for ax in (ax1, ax2):
+# # 	ax.legend()
+# # ax1.set_ylabel("Concentration ($cm^{-3}$)")
+# # ax1.set_xlabel("Datetime")
+# # fig.autofmt_xdate()
+# # fig.suptitle("Concentrations of ions before, during and after midsummer event")
 
-fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6))
-res.plot_hm_conc(s= 'pos', bin_range=(.75, 31.62), ax=ax1)
-res.plot_hm_conc(s= 'neg', bin_range=(.75, 31.62), ax=ax2)
+# fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6))
+res.plot_hm_conc(s= 'pos', bin_range=(.75, 31.62))
+res.plot_hm_conc(s= 'neg', bin_range=(.75, 31.62))
 # res_w.plot_hm_conc(s = 'pos', bin_range=(1.54, 31.62), vmaxi=500)
 # res_w.plot_hm_conc(s = 'pos', bin_range=(.75, 31.62))
 

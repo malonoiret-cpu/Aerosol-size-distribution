@@ -537,7 +537,7 @@ class IonFormation:
             cax = divider.append_axes("right", size="2%", pad=0.1)
             cbar = fig.colorbar(im, cax=cax)
             if i == 2:
-                cbar.set_label(r"Concentration ($cm^{-3}$)", fontsize = label_fontsize)
+                cbar.set_label(r"Production rate ($cm^{-3}$)", fontsize = label_fontsize)
 
         axes[-1].set_xlabel("DateTime")
         fig.supylabel("Particle diameter (nm)", fontsize = label_fontsize)
