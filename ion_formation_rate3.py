@@ -153,7 +153,7 @@ class IonFormation:
                         'wind'          : "#db4dcd",
                         'events'        : "#087edf",
                         'poll_events'   : "#df7008",
-                        'npf'           : "#0d8102",
+                        'npf'           : "#11cc00",
                         'conc'          : 'blue'}
 
 
@@ -537,7 +537,7 @@ class IonFormation:
             cax = divider.append_axes("right", size="2%", pad=0.1)
             cbar = fig.colorbar(im, cax=cax)
             if i == 2:
-                cbar.set_label(r"Production rate ($cm^{-3}$)", fontsize = label_fontsize)
+                cbar.set_label("Production rate ($cm^{-3}\\cdot s^{-1}$)", fontsize = label_fontsize)
 
         axes[-1].set_xlabel("DateTime")
         fig.supylabel("Particle diameter (nm)", fontsize = label_fontsize)

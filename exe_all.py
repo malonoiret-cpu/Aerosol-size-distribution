@@ -306,6 +306,8 @@ def time_average(Q):
     return integral / total_time
 
 def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] = 'wind', bin_range=(dia_min, dia_max)):
+
+    glob_df = pd.DataFrame(columns=['start', 'end', 'Q_pos_mean', 'Q_neg_mean', 'median_wind', 'median_temp', 'Event Type'])
     if xval == 'wind':
         key = 'true_wind_velocity'
         xlabel = 'Wind speed ($m\\cdot s^{-1}$)'
@@ -316,6 +318,7 @@ def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] =
     bin_min, bin_max = bin_range
     
     fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6), sharex=True)
+    size_list = []
     for rad, res_dict in zip(radiation, res_dicts):
         marker = 'x' if rad else 'o'
         for name, event_res in res_dict.items():
@@ -325,27 +328,78 @@ def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] =
             Q_neg_int = time_average(Q_neg)
             
             x_data = event_res.met_df[key].median()
+            wind_median = event_res.met_df['true_wind_velocity'].median()   # for glob_df
+            temp_median = event_res.met_df['air_temperature'].median()
+            size = (abs(temp_median)+4)*4 if xval == 'wind' else 36     # relevant if all median temp are of the same sign
+            size_list.append((size, temp_median))
+
             theresnpf = event_res.theresnpf
             color = event_res.coldict['npf'] if theresnpf else event_res.coldict['events']
             label = 'NPF event' if theresnpf else 'BSE'
-            ax2.scatter(x_data, Q_pos_int, color = color, marker = marker, label = label)
-            ax1.scatter(x_data, Q_neg_int, color = color, marker = marker, label = label)
+            ax2.scatter(x_data, Q_pos_int, color = color, marker = marker, s = size, alpha = 0.6, label = label)
+            ax1.scatter(x_data, Q_neg_int, color = color, marker = marker, s = size, alpha = 0.6, label = label)
+
+            start = event_res.pos_ion_psd.index.min()
+            end = event_res.pos_ion_psd.index.max()
+
+            newrow = pd.DataFrame([{'start'         : start,
+                                    'end'           : end,
+                                    'Q_pos_mean'    : Q_pos_int,
+                                    'Q_neg_mean'	: Q_neg_int,
+                                    'median_wind'   : wind_median,
+                                    'median_temp'	: temp_median,
+                                    'Event Type'	: label}])
+            glob_df = pd.concat([glob_df, newrow], ignore_index=True)
             
+    minsize, mintemp = min(size_list, key=lambda t: t[0])
+    maxsize, maxtemp = max(size_list, key=lambda t: t[0])
+
     legend_elements = [
+        # season
         ax1.scatter([], [], marker='x', color='k', label='Summer (res_dict_s)'),
         ax1.scatter([], [], marker='o', color='k', label='Winter (res_dict_w)'),
+        # event type
         ax1.scatter([], [], marker='s', color=res_dict_w[next(iter(res_dict_w))].coldict['npf'], label='NPF event'),
         ax1.scatter([], [], marker='s', color=res_dict_w[next(iter(res_dict_w))].coldict['events'], label='BSE'),
+        # temperature
+        ax1.scatter([], [], marker='o', color='grey', s = minsize, label=f'{mintemp:.1f} °C'),
+        ax1.scatter([], [], marker='o', color='grey', s = maxsize, label=f'{maxtemp:.1f} °C')
     ]
-    ax2.legend(handles=legend_elements)
+    fig.legend(handles=legend_elements, loc='upper left', ncol=3) #, bbox_to_anchor=(0.5, -0.05)
     ax1.set_title("Negative Ions")
     ax2.set_title("Positive Ions")
     ax1.set_ylabel("Mean Production rate ($cm^{-1}\\,s^{-1}$)")
     ax1.set_xlabel(xlabel)
     ax2.set_xlabel(xlabel)
-    fig.suptitle("'Mean' production rate per event")
-    
-plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind')
-plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='temp')
-plt.show()
+    fig.suptitle(f"'Mean' production rate per event ({bin_min} to {bin_max} nm)")
 
+    return glob_df
+
+# ---- clean result folder --------------------
+result_dir = 'Results_all'
+if os.path.exists(result_dir):
+    shutil.rmtree(result_dir)
+os.makedirs(result_dir)
+
+df_tot = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind')
+plt.savefig(os.path.join(result_dir, "all_events_wind.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+
+
+xx = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='temp')
+plt.savefig(os.path.join(result_dir, "all_events_temp.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+
+df_nucmode = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind', bin_range=(dia_min, 10.))
+plt.savefig(os.path.join(result_dir, "all_events_wind_nucmode.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+
+
+df_aitken = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind', bin_range=(10., dia_max))
+plt.savefig(os.path.join(result_dir, "all_events_wind_aitkenmode.png"), dpi=qual, bbox_inches='tight')
+plt.close()
+
+
+df_tot.to_csv(os.path.join(result_dir, "events_summary_all_size.csv"))
+df_nucmode.to_csv(os.path.join(result_dir, "events_summary_nucmode.csv"))
+df_aitken.to_csv(os.path.join(result_dir, "events_summary_aitken_mode.csv"))
