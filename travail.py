@@ -68,58 +68,46 @@ bse_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in b
 temperature = 298          # [K], if None, met_data considered, else considered as constant (298K was default)
 pressure = 101.3             # [kPa], if None, met_data considered, else considered as constant (101.3 was default)
 
-dia_min = .75               # diameter window (from 0.75 to 31.62 [nm])
+dia_min = 1.54              # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = None          # i.e '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = '2h'         	# i.e '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
-def all_bin_size_by_four(bins):
-	"""Make a list with all size bins suitable for plot functions"""
-	bin_ranges = []
-	for i in range(4, len(bins), 4):
-		ranges  = [(bins[i-4], bins[i-4]), (bins[i-3], bins[i-3]), (bins[i-2], bins[i-2]), (bins[i-1], bins[i-1])]
-		bin_ranges += [ranges]
-	if len(bins)%4 != 0:
-		nb_left_bins = len(bins)%4
-		last_range = [(bins[-nb_left_bins], bins[-nb_left_bins]), (bins[-nb_left_bins+1], bins[-nb_left_bins+1]), (bins[-nb_left_bins+2], bins[-nb_left_bins+2])]
-		bin_ranges += [last_range]
-	return bin_ranges
-
 def all_bin_size(bins):
 	bin_ranges = []
 	for size in bins:
 		bin_ranges.append((size, size))
 	return bin_ranges
 
+def set_bin_all(all_bins, stop_bin = dia_max, dia_min = dia_min, group_big:bool = True, max_bins = 19):
+    """Create a list with desired bins for plots.
+    Limite the number of bins to max_bins for clarity"""
+    if dia_min in all_bins:
+        lower_bin = bins_all.index(dia_min)
+    else:
+        print('dia_min is not in the colums bins')
+        lower_bin = 0
+
+    if stop_bin in all_bins: 
+        stop_bin_idx = all_bins.index(stop_bin)
+        if stop_bin == all_bins[-1]:
+            group_big = False
+    elif group_big: stop_bin_idx = max_bins
+    else: stop_bin_idx = len(all_bins)-1
+
+    bins = all_bins[lower_bin:stop_bin_idx+1]
+    bin_all = [(size, size) for size in bins]
+
+    if group_big:
+        bin_all += [(all_bins[stop_bin_idx+1], all_bins[len(all_bins)-1])]    # Group the bigger ones which give the same results for clearer plot
+
+    return bin_all
+
 bins_all = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 		3.16,  3.65,  4.22,  4.87,  5.62,  6.49,   7.5,  8.66,  10.0, 11.55,
 		13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
-
-def set_bin_all(all_bins, stop_bin = dia_max, dia_min = dia_min, group_big:bool = True, max_bins = 19):
-	"""Create a list with desired bins for plots.
-    Limite the number of bins to max_bins for clarity"""
-	if dia_min in all_bins:
-		lower_bin = bins_all.index(dia_min)
-	else:
-		print('dia_min is not in the colums bins')
-		lower_bin = 0
-
-	if stop_bin in all_bins: 
-		stop_bin_idx = all_bins.index(stop_bin)
-		if stop_bin == all_bins[-1]:
-			group_big = False
-	elif group_big: stop_bin_idx = max_bins
-	else: stop_bin_idx = len(all_bins)-1
-
-	bins = all_bins[lower_bin:stop_bin_idx+1]
-	bin_all = [(size, size) for size in bins]
-
-	if group_big:
-		bin_all += [(all_bins[stop_bin_idx+1], all_bins[len(all_bins)-1])]    # Group the bigger ones which give the same results for clearer plot
-
-	return bin_all
 
 bin_all = set_bin_all(bins_all, stop_bin=11.55, dia_min=dia_min, group_big=True)
 print(bin_all)
@@ -214,17 +202,17 @@ nais_ion_pos_10min_w  = remove_spikes(nais_ion_pos_10min_w)
 
 print("\t Data loaded, computing the results...")
 
-res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
-			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-			diff_order=diff_order, smooth_window=roll_period)
+# res_w = ifr(nais_smps_part, nais_ion_pos_10min_w, nais_ion_neg_10min_w, met_10min_w, df_events= df_events,
+# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+# 			diff_order=diff_order, smooth_window=roll_period)
 print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # # ---- Slice datasets on one event period and compute results -----------------------------
-event_number = 6
+event_number = -1
 event_dates = bse_datetime[event_number]
-start_ev = '2020-06-19 00:00:00'	#event_dates[0] 		# '2019/12/20 00:00:00'
-end_ev = '2020-06-23 00:00:00'		#event_dates[1] 		# '2019/12/21 00:00:00'
+start_ev = event_dates[0] # '2019-12-01 00:00:00'	#		# '2019/12/20 00:00:00'
+end_ev = event_dates[1] # '2019-12-10 00:00:00'		#		# '2019/12/21 00:00:00'
 
 nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
 nais_part_pos_10min = data_dic['nais_part_pos_file'].loc[start_ev:end_ev]
@@ -252,76 +240,6 @@ def time_average(Q):
 
 	return integral / total_time
 
-res_dict = {}
-event_info = {}
-# for start_ev, end_ev, event_type, poll in bse_list:
-
-# 	event_name = f"{start_ev.date()}_to_{end_ev.date()}"
-
-# 	nais_smps_part_ev = nais_smps_part.loc[start_ev:end_ev]
-# 	nais_ion_pos_10min_ev = nais_ion_pos_10min_w.loc[start_ev:end_ev]
-# 	nais_ion_neg_10min_ev = nais_ion_neg_10min_w.loc[start_ev:end_ev]
-# 	met_10min_ev = met_10min_w.loc[start_ev:end_ev]
-
-# 	res = ifr(nais_smps_part_ev, nais_ion_pos_10min_ev, nais_ion_neg_10min_ev, met_10min_ev, df_events=df_events,
-# 			low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-# 			diff_order=diff_order, smooth_window=roll_period)
-	
-# 	res_dict[event_name] = res
-# 	event_info[event_name] = {'Event Type': event_type, 'Pollution': poll}
-
-# reduced_dict = {}
-# result_df = pd.DataFrame(columns=['Q_pos_mean', 'Q_neg_mean', 'median_wind', 'median_temp', 'Event Type', 'Pollution', 'color'])
-# for name, res in res_dict.items():
-# 	Q_pos = res.Q_snow_pos.loc[:, binmin:binmax].sum(axis=1).dropna()
-# 	Q_neg = res.Q_snow_neg.loc[:, binmin:binmax].sum(axis=1).dropna()
-# 	wind_median = res.met_df['true_wind_velocity'].median()
-# 	temp_median = res.met_df['air_temperature'].median()
-
-# 	info = event_info[name]
-# 	color = 'green' if info['Event Type']=='npf' else 'tomato' if info['Pollution'] else 'blue'
-# 	newrow = pd.DataFrame([{'Q_pos_mean' 	: time_average(Q_pos),
-# 						 'Q_neg_mean'		: time_average(Q_neg),
-# 						 'median_wind'		: wind_median,
-# 						 'median_temp'		: temp_median,
-# 						 'Event Type'		: info['Event Type'],
-# 						 'Pollution'		: info['Pollution'],
-# 						 'color'			: color}], index = [name])
-# 	result_df = pd.concat([result_df, newrow], ignore_index=True)
-
-# x_data = 'median_temp'
-# plt.figure()
-# for color, label in [('green', 'NPF'), ('tomato', 'Polluted'), ('blue', 'Other')]:
-#     subset = result_df[result_df['color'] == color]
-#     plt.scatter(subset[x_data], subset['Q_pos_mean'], color=color, label=label)
-
-# plt.xlabel(x_data)
-# plt.ylabel('Q_pos_mean')
-# plt.legend()
-
-
-# x_data = 'median_wind'
-# plt.figure()
-# plt.scatter(result_df[x_data], result_df['Q_pos_mean'])
-# plt.show()
-# -------------------------------------------------------------------------------------------------
-
-
-
-# res_w.boxplot_events('pos', x_data='wind', bin_ranges=[(1., 10.)], event_list=bse_list, width_frac=0.02, commony=False, showfliers=False)
-# plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # To look at the noise for small bins. Remember to set an appropriate time window
@@ -346,10 +264,7 @@ event_info = {}
 # # fig.autofmt_xdate()
 # # fig.suptitle("Concentrations of ions before, during and after midsummer event")
 
-# fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6))
-res.plot_hm_conc(s= 'pos', bin_range=(.75, 31.62))
-res.plot_hm_conc(s= 'neg', bin_range=(.75, 31.62))
-# res_w.plot_hm_conc(s = 'pos', bin_range=(1.54, 31.62), vmaxi=500)
-# res_w.plot_hm_conc(s = 'pos', bin_range=(.75, 31.62))
+res.plot_members(bin_ranges=bin_all, s = 'pos', commony = False)
+res.plot_members(bin_ranges=bin_all, s = 'neg', commony=False)
 
 plt.show()

@@ -10,7 +10,7 @@ import pandas as pd
 import os
 
 # ---- Smoothing parameters -------
-resample_time = '10min'
+resample_time = '10min'	# Also needed to get commmon index between the psds
 
 cwd = os.path.dirname(os.path.realpath(__file__)) # cwd of this python script
 os.chdir(cwd)
