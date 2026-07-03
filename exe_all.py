@@ -9,6 +9,7 @@ from ion_formation_rate3 import IonFormation as ifr
 from typing import Literal
 import os
 import shutil
+from scipy.stats import spearmanr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
@@ -360,14 +361,14 @@ result_dir = 'Results_all'
 #     shutil.rmtree(result_dir)
 # os.makedirs(result_dir)
 
-# df_tot = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind')
-# plt.savefig(os.path.join(result_dir, "all_events_wind.png"), dpi=qual, bbox_inches='tight')
-# plt.close()
+df_tot = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind')
+plt.savefig(os.path.join(result_dir, "all_events_wind.png"), dpi=qual, bbox_inches='tight')
+plt.close()
 
 
-# xx = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='temp')
-# plt.savefig(os.path.join(result_dir, "all_events_temp.png"), dpi=qual, bbox_inches='tight')
-# plt.close()
+xx = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='temp')
+plt.savefig(os.path.join(result_dir, "all_events_temp.png"), dpi=qual, bbox_inches='tight')
+plt.close()
 
 df_nucmode = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind', bin_range=(dia_min, 10.))
 plt.savefig(os.path.join(result_dir, "all_events_wind_nucmode.png"), dpi=qual, bbox_inches='tight')
@@ -385,8 +386,26 @@ nuc_rat_pos_neg_mean = nuc_rat_pos_neg.loc[nuc_rat_pos_neg >0].mean()
 ait_rat_pos_neg = df_aitken['Q_pos_mean'] / df_aitken['Q_neg_mean']
 ait_rat_pos_neg_mean = ait_rat_pos_neg.loc[ait_rat_pos_neg>0].mean()
 
-print(f"Ratio pos/neg: \n \t nuc mode : {nuc_rat_pos_neg} (mean = {nuc_rat_pos_neg_mean})", 
-        f"\n \t aitken mode : {ait_rat_pos_neg} (mean = {ait_rat_pos_neg_mean})")
+print(f"Mean ratio pos/neg: \n \t nuc mode : {nuc_rat_pos_neg_mean})", 
+        f"\n \t aitken mode : {ait_rat_pos_neg_mean})")
+
+bse_df_nucmode = df_nucmode.loc[df_nucmode['Event Type'] == 'BSE']
+bse_df_aitken = df_aitken.loc[df_aitken['Event Type'] == 'BSE']
+
+rho_wind_nucmode, p_wind_nucmode = spearmanr(bse_df_nucmode['median_wind'], bse_df_nucmode['Q_neg_mean'])
+rho_temp_nucmode, p_temp_nucmode = spearmanr(bse_df_nucmode['median_temp'], bse_df_nucmode['Q_neg_mean'])
+
+rho_wind_aitken, p_wind_aitken = spearmanr(bse_df_aitken['median_wind'], bse_df_aitken['Q_neg_mean'])
+rho_temp_aitken, p_temp_aitken = spearmanr(bse_df_aitken['median_temp'], bse_df_aitken['Q_neg_mean'])
+
+print("Spearman test: \n \t Nucmode:")
+print(f"Wind vs production rate: rho = {rho_wind_nucmode:.2f}, p = {p_wind_nucmode:.3f}")
+print(f"Temp vs production rate: rho = {rho_temp_nucmode:.2f}, p = {p_temp_nucmode:.3f}")
+
+print("\t Aitken mode")
+print(f"Wind vs production rate: rho = {rho_wind_aitken:.2f}, p = {p_wind_aitken:.3f}")
+print(f"Temp vs production rate: rho = {rho_temp_aitken:.2f}, p = {p_temp_aitken:.3f}")
+
 
 # rat_nuc_ait_pos = df_nucmode['Q_pos_mean'] / df_aitken['Q_pos_mean']
 # rat_nuc_ait_pos_mean = rat_nuc_ait_pos.mean()
