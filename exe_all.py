@@ -42,6 +42,16 @@ sharey = False       # Share y-axis when subplotting (not on heat map)
 ylogscale = False   # log scale on y-axis
 qual = 150          # Output plots quality
 
+plt.rcParams.update({
+    'font.size': 14,          # base font size (affects legend text too, unless overridden)
+    'axes.labelsize': 16,     # x/y axis labels
+    'axes.titlesize': 16,     # subplot titles
+    'xtick.labelsize': 12,    # tick numbers
+    'ytick.labelsize': 12,
+    'legend.fontsize': 13,
+    'figure.titlesize': 18,   # suptitle
+})
+
 save_csv = True
 
 bins_all = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
@@ -114,9 +124,9 @@ def all_res(start, end, result_dir, data_dic = data_dict, df_events = df_events,
     """Compute and save plots all results according to the settings (work with global variables)"""
     print(f"\n Analysis from {start} to {end}")
     # ---- clean result folder --------------------
-    # if os.path.exists(result_dir):
-    #     shutil.rmtree(result_dir)
-    # os.makedirs(result_dir)
+    if os.path.exists(result_dir):
+        shutil.rmtree(result_dir)
+    os.makedirs(result_dir)
 
     # ---- load data --------------------------------------------------
     smps_10min_win = data_dic['smps'].loc[start:end]
@@ -139,63 +149,62 @@ def all_res(start, end, result_dir, data_dic = data_dict, df_events = df_events,
     res_dict = {}   # save and return all results ?
     bse_list = df_events.loc[:, ['start', 'end']].values.tolist() if study_poll else df_events.loc[df_events['Pollution'] == False, ['start', 'end']].values.tolist()
 
-    # # ---- Compute results for the global period ---------------------------------
-    # print(f"Computing the global period results")
+    # ---- Compute results for the global period ---------------------------------
+    print(f"Computing the global period results")
 
-    # res_w = ifr(nais_smps_part, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
-    #             low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
-    #             diff_order=diff_order, smooth_window=roll_period)
-    # res_dict['global'] = res_w
-    # print("\t Results computed. Saving the plots...")
+    res_w = ifr(nais_smps_part, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, df_events=df_events,
+                low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
+                diff_order=diff_order, smooth_window=roll_period)
+    print("\t Results computed. Saving the plots...")
 
-    # res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], study_poll=True, commony=sharey, T_roll='24h')
-    # plt.savefig(os.path.join(result_dir, "all_pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], study_poll=True, commony=sharey, T_roll='24h')
+    plt.savefig(os.path.join(result_dir, "all_pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.plot_events(s='neg', bin_ranges= [[dia_min,dia_max]], study_poll=True, commony=sharey, T_roll='24h')
-    # plt.savefig(os.path.join(result_dir, "all_neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.plot_events(s='neg', bin_ranges= [[dia_min,dia_max]], study_poll=True, commony=sharey, T_roll='24h')
+    plt.savefig(os.path.join(result_dir, "all_neg-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_values('pos', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_dtemp_pos.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_values('pos', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_dtemp_pos.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_values('neg', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_dtemp_neg.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_values('neg', x_data='dtemp', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_dtemp_neg.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_wind_pos.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_values('pos', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_wind_pos.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_values('neg', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_wind_neg.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_values('neg', x_data='wind', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_wind_neg.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_values('pos', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_temperature_pos.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_values('pos', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_temperature_pos.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_values('neg', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_temperature_neg.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_values('neg', x_data='temperature', bin_ranges=bin_all, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_temperature_neg.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_WT('pos', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_WT_pos.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_WT('pos', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_WT_pos.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
 
-    # res_w.scatter_WT('neg', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll, npf=add_npf)
-    # plt.savefig(os.path.join(result_dir, "scatter_WT_neg.png"), dpi=qual, bbox_inches='tight')
-    # plt.close()
+    res_w.scatter_WT('neg', bin_ranges=bin_all, commony=False, ras=add_ras, pollution=add_poll, npf=add_npf)
+    plt.savefig(os.path.join(result_dir, "scatter_WT_neg.png"), dpi=qual, bbox_inches='tight')
+    plt.close()
     
-    # if save_csv: 
-    #     df_pos = build_results_df(res_w.dic_pos)
-    #     df_neg = build_results_df(res_w.dic_neg)
+    if save_csv: 
+        df_pos = build_results_df(res_w.dic_pos)
+        df_neg = build_results_df(res_w.dic_neg)
         
-    #     df_pos.to_csv(os.path.join(result_dir, "global_pos.csv"))
-    #     df_neg.to_csv(os.path.join(result_dir, "global_neg.csv"))
+        df_pos.to_csv(os.path.join(result_dir, "global_pos.csv"))
+        df_neg.to_csv(os.path.join(result_dir, "global_neg.csv"))
 
-    # print(f"\t Global period plots are saved in {result_dir}")
+    print(f"\t Global period plots are saved in {result_dir}")
     # ------------------------------------------------------------------------------------
 
     # ---- Compute results for each bse ---------------------------------------
@@ -213,48 +222,48 @@ def all_res(start, end, result_dir, data_dic = data_dict, df_events = df_events,
         event_name = f"{start_ev.date()}_to_{end_ev.date()}"
         res_dict[event_name] = res
 
-    #     # ---- make the directory to the dedicated folder
-    #     event_dir = os.path.join(result_dir, event_name)
-    #     os.makedirs(event_dir)
+        # ---- make the directory to the dedicated folder
+        event_dir = os.path.join(result_dir, event_name)
+        os.makedirs(event_dir)
 
-    #     # ---- generate the plots and save them
-    #     res.plot_hm(s='pos')
-    #     plt.savefig(os.path.join(event_dir, "heatmap_pos.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        # ---- generate the plots and save them
+        res.plot_hm(s='pos')
+        plt.savefig(os.path.join(event_dir, "heatmap_pos.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
 
-    #     res.plot_hm(s='neg')
-    #     plt.savefig(os.path.join(event_dir, "heatmap_neg.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        res.plot_hm(s='neg')
+        plt.savefig(os.path.join(event_dir, "heatmap_neg.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
 
-    #     res.plot_hm_conc(s='pos')
-    #     plt.savefig(os.path.join(event_dir, "conc_hm_pos.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        res.plot_hm_conc(s='pos')
+        plt.savefig(os.path.join(event_dir, "conc_hm_pos.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
 
-    #     res.plot_hm_conc(s='neg')
-    #     plt.savefig(os.path.join(event_dir, "conc_hm_neg.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        res.plot_hm_conc(s='neg')
+        plt.savefig(os.path.join(event_dir, "conc_hm_neg.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
         
-    #     res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
-    #     plt.savefig(os.path.join(event_dir, "members_all_pos.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        res.plot_members(bin_ranges=bin_all, s = 'pos', commony = True, logsc = ylogscale)
+        plt.savefig(os.path.join(event_dir, "members_all_pos.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
         
-    #     res.plot_members(bin_ranges=bin_all, s = 'neg', commony = True, logsc = ylogscale)
-    #     plt.savefig(os.path.join(event_dir, "members_all_neg.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        res.plot_members(bin_ranges=bin_all, s = 'neg', commony = True, logsc = ylogscale)
+        plt.savefig(os.path.join(event_dir, "members_all_neg.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
 
-    #     res.volume_plot('pos', bin_ranges=bin_all, commony=False)
-    #     plt.savefig(os.path.join(event_dir, "volume_production_pos.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        res.volume_plot('pos', bin_ranges=bin_all, commony=False)
+        plt.savefig(os.path.join(event_dir, "volume_production_pos.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
 
-    #     res.volume_plot('neg', bin_ranges=bin_all, commony=False)
-    #     plt.savefig(os.path.join(event_dir, "volume_production_neg.png"), dpi=qual, bbox_inches='tight')
-    #     plt.close()
+        res.volume_plot('neg', bin_ranges=bin_all, commony=False)
+        plt.savefig(os.path.join(event_dir, "volume_production_neg.png"), dpi=qual, bbox_inches='tight')
+        plt.close()
 
-    #     note = df_events.loc[df_events['start'] == start_ev, 'notes'].values[0]
-    #     with open(os.path.join(event_dir, "notes.txt"), 'w') as f:
-    #         f.write(str(note))
-    #     print(f"{event_dir} done")
-    # print(f"All event results are saved in {result_dir} in their dedicated folder")
+        note = df_events.loc[df_events['start'] == start_ev, 'notes'].values[0]
+        with open(os.path.join(event_dir, "notes.txt"), 'w') as f:
+            f.write(str(note))
+        print(f"{event_dir} done")
+    print(f"All event results are saved in {result_dir} in their dedicated folder")
 
     return res_dict
 # ----------------------------------------------------------------------
@@ -300,7 +309,7 @@ def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] =
     fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6), sharex=True)
     size_list = []
     for rad, res_dict in zip(radiation, res_dicts):
-        marker = 'x' if rad else 'o'
+        marker = 'v' if rad else 'o'
         for name, event_res in res_dict.items():
             Q_pos = event_res.Q_snow_pos.loc[:, bin_min:bin_max].sum(axis=1).dropna()
             Q_pos_int = time_average(Q_pos)
@@ -310,7 +319,7 @@ def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] =
             x_data = event_res.met_df[key].median()
             wind_median = event_res.met_df['true_wind_velocity'].median()   # for glob_df
             temp_median = event_res.met_df['air_temperature'].median()
-            size = (abs(temp_median)+4)*4 if xval == 'wind' else 36     # relevant if all median temp are of the same sign
+            size = (abs(temp_median)+4)*8 if xval == 'wind' else 36     # relevant if all median temp are of the same sign
             size_list.append((size, temp_median))
 
             theresnpf = event_res.theresnpf
@@ -336,8 +345,8 @@ def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] =
 
     legend_elements = [
         # season
-        ax1.scatter([], [], marker='x', color='k', label='Summer (res_dict_s)'),
-        ax1.scatter([], [], marker='o', color='k', label='Winter (res_dict_w)'),
+        ax1.scatter([], [], marker='x', color='k', label='Summer'),
+        ax1.scatter([], [], marker='o', color='k', label='Winter'),
         # event type
         ax1.scatter([], [], marker='s', color=res_dict_w[next(iter(res_dict_w))].coldict['npf'], label='NPF event'),
         ax1.scatter([], [], marker='s', color=res_dict_w[next(iter(res_dict_w))].coldict['events'], label='BSE'),
@@ -357,9 +366,9 @@ def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] =
 
 # ---- clean result folder --------------------
 result_dir = 'Results_all'
-# if os.path.exists(result_dir):
-#     shutil.rmtree(result_dir)
-# os.makedirs(result_dir)
+if os.path.exists(result_dir):
+    shutil.rmtree(result_dir)
+os.makedirs(result_dir)
 
 df_tot = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, False), xval='wind')
 plt.savefig(os.path.join(result_dir, "all_events_wind.png"), dpi=qual, bbox_inches='tight')
@@ -379,8 +388,6 @@ df_aitken = plot_global(res_dicts=(res_dict_s, res_dict_w), radiation=(True, Fal
 plt.savefig(os.path.join(result_dir, "all_events_wind_aitkenmode.png"), dpi=qual, bbox_inches='tight')
 plt.close()
 
-
-
 nuc_rat_pos_neg = df_nucmode['Q_pos_mean'] / df_nucmode['Q_neg_mean']
 nuc_rat_pos_neg_mean = nuc_rat_pos_neg.loc[nuc_rat_pos_neg >0].mean()
 ait_rat_pos_neg = df_aitken['Q_pos_mean'] / df_aitken['Q_neg_mean']
@@ -389,22 +396,24 @@ ait_rat_pos_neg_mean = ait_rat_pos_neg.loc[ait_rat_pos_neg>0].mean()
 print(f"Mean ratio pos/neg: \n \t nuc mode : {nuc_rat_pos_neg_mean})", 
         f"\n \t aitken mode : {ait_rat_pos_neg_mean})")
 
-bse_df_nucmode = df_nucmode.loc[df_nucmode['Event Type'] == 'BSE']
-bse_df_aitken = df_aitken.loc[df_aitken['Event Type'] == 'BSE']
 
-rho_wind_nucmode, p_wind_nucmode = spearmanr(bse_df_nucmode['median_wind'], bse_df_nucmode['Q_neg_mean'])
-rho_temp_nucmode, p_temp_nucmode = spearmanr(bse_df_nucmode['median_temp'], bse_df_nucmode['Q_neg_mean'])
+print(df_nucmode)
+# bse_df_nucmode = df_nucmode.loc[df_nucmode['Event Type'] == 'BSE']
+# bse_df_aitken = df_aitken.loc[df_aitken['Event Type'] == 'BSE']
 
-rho_wind_aitken, p_wind_aitken = spearmanr(bse_df_aitken['median_wind'], bse_df_aitken['Q_neg_mean'])
-rho_temp_aitken, p_temp_aitken = spearmanr(bse_df_aitken['median_temp'], bse_df_aitken['Q_neg_mean'])
+# rho_wind_nucmode, p_wind_nucmode = spearmanr(bse_df_nucmode['median_wind'], bse_df_nucmode['Q_neg_mean'])
+# rho_temp_nucmode, p_temp_nucmode = spearmanr(bse_df_nucmode['median_temp'], bse_df_nucmode['Q_neg_mean'])
 
-print("Spearman test: \n \t Nucmode:")
-print(f"Wind vs production rate: rho = {rho_wind_nucmode:.2f}, p = {p_wind_nucmode:.3f}")
-print(f"Temp vs production rate: rho = {rho_temp_nucmode:.2f}, p = {p_temp_nucmode:.3f}")
+# rho_wind_aitken, p_wind_aitken = spearmanr(bse_df_aitken['median_wind'], bse_df_aitken['Q_neg_mean'])
+# rho_temp_aitken, p_temp_aitken = spearmanr(bse_df_aitken['median_temp'], bse_df_aitken['Q_neg_mean'])
 
-print("\t Aitken mode")
-print(f"Wind vs production rate: rho = {rho_wind_aitken:.2f}, p = {p_wind_aitken:.3f}")
-print(f"Temp vs production rate: rho = {rho_temp_aitken:.2f}, p = {p_temp_aitken:.3f}")
+# print("Spearman test: \n \t Nucmode:")
+# print(f"Wind vs production rate: rho = {rho_wind_nucmode:.2f}, p = {p_wind_nucmode:.3f}")
+# print(f"Temp vs production rate: rho = {rho_temp_nucmode:.2f}, p = {p_temp_nucmode:.3f}")
+
+# print("\t Aitken mode")
+# print(f"Wind vs production rate: rho = {rho_wind_aitken:.2f}, p = {p_wind_aitken:.3f}")
+# print(f"Temp vs production rate: rho = {rho_temp_aitken:.2f}, p = {p_temp_aitken:.3f}")
 
 
 # rat_nuc_ait_pos = df_nucmode['Q_pos_mean'] / df_aitken['Q_pos_mean']
@@ -415,6 +424,6 @@ print(f"Temp vs production rate: rho = {rho_temp_aitken:.2f}, p = {p_temp_aitken
 # print(f"Ratio nucmode/aitken:\n \t Pos: {rat_nuc_ait_pos} \n \t Neg: {rat_nuc_ait_neg}")
 
 
-# df_tot.to_csv(os.path.join(result_dir, "events_summary_all_size.csv"))
-# df_nucmode.to_csv(os.path.join(result_dir, "events_summary_nucmode.csv"))
-# df_aitken.to_csv(os.path.join(result_dir, "events_summary_aitken_mode.csv"))
+df_tot.to_csv(os.path.join(result_dir, "events_summary_all_size.csv"))
+df_nucmode.to_csv(os.path.join(result_dir, "events_summary_nucmode.csv"))
+df_aitken.to_csv(os.path.join(result_dir, "events_summary_aitken_mode.csv"))

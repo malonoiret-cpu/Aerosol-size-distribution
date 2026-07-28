@@ -481,7 +481,7 @@ class IonFormation:
                 shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
         ax1.set_ylabel("Diameter [nm]")
         ax1.set_xlabel("DateTime")
-        ax1.set_title(main_title)
+        # ax1.set_title(main_title)
         # plt.colorbar(im, ax=ax1, pad=0.01)
 
         # Use make_axes_locatable to carve a fixed-width colorbar axis
@@ -609,7 +609,7 @@ class IonFormation:
 
         # fig.text(0.5, 0., rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
         fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
-        fig.suptitle(main_title)
+        # fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
 

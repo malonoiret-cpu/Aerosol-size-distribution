@@ -35,24 +35,8 @@ npf_datetime_list_text1 = [['2019-12-02 00:00:00', '2019-12-06 00:00:00'],   #  
 						  ['2020-02-12 00:00:00', '2020-02-16 00:00:00'],
 						  ['2020-02-18 00:00:00', '2020-02-22 00:00:00']]
 
-# npf_datetime_list_text2 = [['2019-10-28 08:00:00', '2019-10-28 12:30:00'],	# Matt's events
-# 						   ['2029-11-11 01:10:00', '2019-11-12 10:45:00'],
-# 						   ['2019-11-15 19:15:00', '2019-11-16 01:00:00'],
-# 						   ['2019-11-16 07:00:00', '2019-11-18 18:00:00'],	# polluted
-# 						   ['2019-11-23 11:00:00', '2019-11-25 07:00:00'],
-# 						   ['2019-12-02 15:30:00', '2019-12-06 01:00:00'],
-# 						   ['2019-12-07 21:35:00', '2019-12-08 18:00:00'],	# polluted at the start of the event
-# 						   ['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
-# 						   ['2020-01-01 08:00:00', '2020-01-03 01:00:00'],	# possibly polluted
-# 						   ['2020-01-03 19:10:00', '2020-01-04 04:00:00'],	# SMPS labelled as pollution, but it is more likely blowing snow
-# 						   ['2020-01-11 14:45:00', '2020-01-11 22:00:00'],	# a lot of pollution but with minimal influence?
-# 						   ['2020-01-15 05:30:00', '2020-01-15 16:55:00'],	# Obvious short lived pollution spikes
-# 						   ['2020-01-15 18:20:00', '2020-01-16 00:55:00'],	# Same as the previous one
-# 						   ['2020-01-16 01:55:00', '2020-01-16 09:45:00'],	# Pollution flagging in the NAIS, but no evidence in the SMPS
-# 						   ]
-
 # Import events from Matthew's notes
-pollution_remove = False			# if false, do not consider polluted events as events
+pollution_remove = False			# if True, do not consider polluted events as events
 df_events = pd.read_csv('Data/days-of-interest.csv', sep = ';')
 df_events['start'] = pd.to_datetime(df_events['start'], format='ISO8601')
 df_events['end'] = pd.to_datetime(df_events['end'], format='ISO8601')
@@ -71,7 +55,7 @@ pressure = 101.3             # [kPa], if None, met_data considered, else conside
 dia_min = 1.54              # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = '2h'         	# i.e '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = None         	# i.e '2h', if not None, apply a rolling median over the time given to smooth the data
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
@@ -110,7 +94,17 @@ bins_all = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 		13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
 
 bin_all = set_bin_all(bins_all, stop_bin=11.55, dia_min=dia_min, group_big=True)
-print(bin_all)
+
+plt.rcParams.update({
+    'font.size': 14,          # base font size (affects legend text too, unless overridden)
+    'axes.labelsize': 16,     # x/y axis labels
+    'axes.titlesize': 16,     # subplot titles
+    'xtick.labelsize': 12,    # tick numbers
+    'ytick.labelsize': 12,
+    'legend.fontsize': 13,
+    'figure.titlesize': 18,   # suptitle
+})
+
 qual = 150              # Output plots quality
 sharey = False          # Share y-axis when subplotting (not on heat map)
 ylogscale = False       # log scale on y-axis
@@ -209,7 +203,7 @@ print("\t Results computed in the instance res_w")
 # -------------------------------------------------------------------------------------------
 
 # # ---- Slice datasets on one event period and compute results -----------------------------
-event_number = -1
+event_number = 6
 event_dates = bse_datetime[event_number]
 start_ev = event_dates[0] # '2019-12-01 00:00:00'	#		# '2019/12/20 00:00:00'
 end_ev = event_dates[1] # '2019-12-10 00:00:00'		#		# '2019/12/21 00:00:00'
@@ -264,7 +258,7 @@ def time_average(Q):
 # # fig.autofmt_xdate()
 # # fig.suptitle("Concentrations of ions before, during and after midsummer event")
 
-res.plot_members(bin_ranges=bin_all, s = 'pos', commony = False)
-res.plot_members(bin_ranges=bin_all, s = 'neg', commony=False)
+res.plot_hm_conc('pos', bin_range=(1.54,31.62), vmini=0, vmaxi=650)
+res.plot_hm_conc('neg', bin_range=(1.54,31.62), vmini=0, vmaxi=650)
 
 plt.show()
