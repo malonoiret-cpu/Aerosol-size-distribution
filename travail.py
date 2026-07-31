@@ -93,17 +93,17 @@ bins_all = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 		3.16,  3.65,  4.22,  4.87,  5.62,  6.49,   7.5,  8.66,  10.0, 11.55,
 		13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
 
-bin_all = set_bin_all(bins_all, stop_bin=11.55, dia_min=dia_min, group_big=True)
-
-plt.rcParams.update({
-    'font.size': 14,          # base font size (affects legend text too, unless overridden)
-    'axes.labelsize': 16,     # x/y axis labels
-    'axes.titlesize': 16,     # subplot titles
-    'xtick.labelsize': 12,    # tick numbers
-    'ytick.labelsize': 12,
-    'legend.fontsize': 13,
-    'figure.titlesize': 18,   # suptitle
-})
+bin_all = set_bin_all(bins_all, stop_bin=6.49, dia_min=dia_min, group_big=True)
+print(bin_all)
+# plt.rcParams.update({
+#     'font.size': 14,          # base font size (affects legend text too, unless overridden)
+#     'axes.labelsize': 16,     # x/y axis labels
+#     'axes.titlesize': 12,     # subplot titles
+#     'xtick.labelsize': 12,    # tick numbers
+#     'ytick.labelsize': 12,
+#     'legend.fontsize': 13,
+#     'figure.titlesize': 18,   # suptitle
+# })
 
 qual = 150              # Output plots quality
 sharey = False          # Share y-axis when subplotting (not on heat map)
@@ -258,7 +258,9 @@ def time_average(Q):
 # # fig.autofmt_xdate()
 # # fig.suptitle("Concentrations of ions before, during and after midsummer event")
 
-res.plot_hm_conc('pos', bin_range=(1.54,31.62), vmini=0, vmaxi=650)
-res.plot_hm_conc('neg', bin_range=(1.54,31.62), vmini=0, vmaxi=650)
+res.plot_members(bin_ranges=bin_all, s= 'pos', commony=True)
+res.plot_members(bin_ranges=bin_all, s= 'neg', commony=True)
+# res.plot_hm_conc('pos', bin_range=(1.54, 31.62), vmini=0, vmaxi=80)
+# res.plot_hm_conc('neg', bin_range=(1.54, 31.62), vmini=0, vmaxi=80)
 
 plt.show()
