@@ -8,10 +8,8 @@ from ion_formation_rate3 import IonFormation as ifr
 
 # ---- Study settings ---------------------------------------------------------
     # Time settings -------------------------
-start_w = '2019-10-15 00:00:00'		# '2019-11-26 00:00:00'
-end_w = '2020-10-01 00:00:00'		# '2019-12-09 00:00:00'
-# start_w = '2020-06-18 00:00:00'
-# end_w = '2020-06-25 00:00:00'
+start_w = '2019-10-15 00:00:00'	
+end_w = '2020-10-01 00:00:00'
 
 npf_datetime_list_text = [['2019-12-10 02:15:00', '2019-12-10 06:45:00'],
 					['2019-12-02 14:00:00', '2019-12-06 04:00:00'],   # Qualitatively determined blowing snow events
@@ -49,13 +47,13 @@ bse_datetime = [(pd.to_datetime(start), pd.to_datetime(end)) for start, end in b
 
 
     # Physics settings
-temperature = 298          # [K], if None, met_data considered, else considered as constant (298K was default)
-pressure = 101.3             # [kPa], if None, met_data considered, else considered as constant (101.3 was default)
+temperature = None          # [K], if None, met_data considered, else considered as constant (298K was default)
+pressure = None             # [kPa], if None, met_data considered, else considered as constant (101.3 was default)
 
-dia_min = 1.54              # diameter window (from 0.75 to 31.62 [nm])
+dia_min = 1.54              # diameter window (from 0.75 to 31.62 [nm], smallest bins removed)
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = None         	# i.e '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = None         	# i.e '2h', if not None, apply a rolling median over the time given to smooth the results
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings
@@ -94,52 +92,24 @@ bins_all = [0.75,  0.87,   1.0,  1.15,  1.33,  1.54,  1.78,  2.05,  2.37,  2.74,
 		13.34,  15.4, 17.78, 20.54, 23.71, 27.38, 31.62]
 
 bin_all = set_bin_all(bins_all, stop_bin=6.49, dia_min=dia_min, group_big=True)
-print(bin_all)
-# plt.rcParams.update({
-#     'font.size': 14,          # base font size (affects legend text too, unless overridden)
-#     'axes.labelsize': 16,     # x/y axis labels
-#     'axes.titlesize': 12,     # subplot titles
-#     'xtick.labelsize': 12,    # tick numbers
-#     'ytick.labelsize': 12,
-#     'legend.fontsize': 13,
-#     'figure.titlesize': 18,   # suptitle
-# })
+bin_ranges = [(1.54,  2.05), (2.37,  3.65), (4.22, 7.5), (8.66,  31.62)]   # for grouped subplots
+
+plt.rcParams.update({ # global font settings for plots
+    'font.size': 14,
+    'axes.labelsize': 14,
+    'axes.titlesize': 14,
+    'xtick.labelsize': 12,
+    'ytick.labelsize': 12,
+    'legend.fontsize': 13,
+    'figure.titlesize': 16,
+})
 
 qual = 150              # Output plots quality
 sharey = False          # Share y-axis when subplotting (not on heat map)
 ylogscale = False       # log scale on y-axis
 qual = 150              # Output plots quality
 
-# ---------------------------------------------------------------------------
-def banana_plot(psd_data, colorbar_max_lim=2000.0, ymin=3, ymax=550, cmap='viridis', title=None):
-    
-    psd = psd_data.copy()
-    # need to add an additional time index so that the last row of real data is plotted
-    freq = psd.index.to_series().diff().min()
-    psd.loc[psd.index.max() + freq] = None
-    
-    #transpose the binned smps data for plotting
-    transposed_data = psd.T
-    
-    #extract diameters from the psd dataframe (only works when using raw data loaded using fileloader.py)
-    dp = psd.columns.values.astype(float)
-    
-    #generate plot
-    fig, ax = plt.subplots()
 
-    #image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(), vmin=1, vmax=colorbar_max_lim, cmap=cmap )
-    image = ax.pcolormesh(psd.index, dp, transposed_data+1, norm=colors.LogNorm(vmin=1, vmax=colorbar_max_lim), cmap=cmap )
-    
-    ax.set_title(title)
-    ax.set_xlabel('Date/Time')
-    ax.set_ylabel('Particle Diameter [nm]')
-    ax.set_ylim(bottom=ymin, top=ymax)
-    ax.set_yscale('log')
-    ax.grid(True, which='both', axis='both', linestyle='--', 
-            color='k', linewidth=0.8)
-
-    cbar = fig.colorbar(image,  pad = 0.1)
-    cbar.set_label('dN/dlogDp [$cm^{-3}$]')
 # ---- load data -------------------------------------------------------
 def load_psd(filepath):
 	"""Load the nais et smps files."""
@@ -220,47 +190,5 @@ res = ifr(nais_smps_part_ev, nais_ion_pos_10min, nais_ion_neg_10min, met_10min, 
 print("The instance containing the result has been created (res)")
 # ---------------------------------------------------------------------------------------
 
-# ---- Characterize all events -----------------------------------------------------------
-study_poll = False
-df_sel = df_events if study_poll else df_events.loc[df_events['Pollution'] == False]
-bse_list = df_sel.loc[:, ['start', 'end', 'Event Type', 'Pollution']].values.tolist()
-binmin = 1.
-binmax = 10.
-
-def time_average(Q):
-	t_seconds = (Q.index - Q.index[0]).total_seconds().to_numpy()
-	integral = np.trapezoid(Q.to_numpy(), t_seconds)   # [#/cm^3], total ions formed per cm3 over the event
-	total_time = t_seconds[-1] - t_seconds[0]
-
-	return integral / total_time
 
 
-
-# To look at the noise for small bins. Remember to set an appropriate time window
-
-# sizes = [.75, .87, 1., 1.54, 2.05, 10.]
-# start_noise = '2019-12-01 00:00:00'
-# end_noise = '2019-12-09 00:00:00'
-# resample_time = '2h'
-# # df_pos = res_w.pos_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
-# # df_neg = res_w.neg_N_ion.loc[start_noise:end_noise, sizes].rolling(window = resample_time, center = True).mean()
-
-# # fig, (ax1, ax2) = plt.subplots(1,2, figsize = (12,6), sharex=True)
-# # df_pos.plot(ax = ax1, alpha = 0.8)
-# # ax1.set_title("pos")
-# # df_neg.plot(ax = ax2, alpha = 0.8)
-# # ax2.set_title("neg")
-
-# # for ax in (ax1, ax2):
-# # 	ax.legend()
-# # ax1.set_ylabel("Concentration ($cm^{-3}$)")
-# # ax1.set_xlabel("Datetime")
-# # fig.autofmt_xdate()
-# # fig.suptitle("Concentrations of ions before, during and after midsummer event")
-
-res.plot_members(bin_ranges=bin_all, s= 'pos', commony=True)
-res.plot_members(bin_ranges=bin_all, s= 'neg', commony=True)
-# res.plot_hm_conc('pos', bin_range=(1.54, 31.62), vmini=0, vmaxi=80)
-# res.plot_hm_conc('neg', bin_range=(1.54, 31.62), vmini=0, vmaxi=80)
-
-plt.show()

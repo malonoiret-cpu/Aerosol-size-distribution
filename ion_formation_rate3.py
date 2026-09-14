@@ -1,5 +1,3 @@
-# this class is based on ion_formation_rate2.py, and aim to give results according to the size bins
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -481,7 +479,8 @@ class IonFormation:
                 shading="auto", cmap=cmap, vmin= vmini, vmax= vmaxi)
         ax1.set_ylabel("Diameter [nm]")
         ax1.set_xlabel("DateTime")
-        # ax1.set_title(main_title)
+        ax1.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m %H:%M'))
+        ax1.set_title(main_title)
         # plt.colorbar(im, ax=ax1, pad=0.01)
 
         # Use make_axes_locatable to carve a fixed-width colorbar axis
@@ -582,7 +581,7 @@ class IonFormation:
             col = idx%ncol  # column index for plotting columns
 
             ind_start = 2 if logsc else 1   # Plot dN/dt only if not log scale
-            for lab, df in list(data_dic.items())[ind_start:]:
+            for lab, df in list(data_dic.items())[1:3]: #ind_start
                 plotfun(df.loc[:,bin_low:bin_high].sum(axis=1), alpha = 0.7, label = lab)
 
             # keep only pos values if log scale
@@ -608,7 +607,7 @@ class IonFormation:
                 ax2.tick_params(axis='y', colors=color, labelleft=False, labelright=False) #, labelsize=7
 
         # fig.text(0.5, 0., rf"Average wind = {wind_mean:.2f} $m \cdot s^{{-1}}$" "\n" rf"Average temperature = {temp_mean:.2f} $K$", ha='center', va='center')
-        fig.legend(lines, labels, loc = "upper center", ncol=len(data_dic))
+        fig.legend(lines, labels, loc = "lower center", ncol=len(data_dic))
         # fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
@@ -832,7 +831,6 @@ class IonFormation:
         fig.suptitle(main_title)
         fig.autofmt_xdate()
         plt.tight_layout()
-
 
     def boxplot_events(self, s='pos', x_data='wind', bin_ranges=[(0.75, 31.62)],
                     event_list=None, width_frac=0.04, commony=False, showfliers=False):

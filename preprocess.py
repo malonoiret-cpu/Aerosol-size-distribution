@@ -1,6 +1,6 @@
 # csv pre-processing
 """
-Since the protocol on cleaning the csv data files is the same regardless the settings, this code pre-process the csv files to avoid doing it at every computations of exe.py
+Since the protocol on cleaning the csv data files is the same regardless the settings, this code pre-processes the csv files to avoid doing it at every computations of travail.py or exe_all.py
 Cleaning means set the DateTime index, and convert the column headers to numeric for the psds. The clean dfs are saved as parquet files to conserve these changes.
 Clean parquet files are created holding the suffix "_clean"
 Clean and resampled (to have the same index beetwin the files) are created holding the suffix "_clean_10min"

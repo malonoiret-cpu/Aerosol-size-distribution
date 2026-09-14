@@ -29,7 +29,7 @@ pressure = None             # [kPa], if None, met_data considered, else P consid
 dia_min = 1.54               # diameter window (from 0.75 to 31.62 [nm])
 dia_max = 31.62             # (Using the 36.52 and 42.17 bins break the coag loss function (they are empty anyway). If the bins are wanted, uncommenting the NaN filter line in the function is required)
 
-roll_period = None          # '2h', if not None, apply a rolling median over the time given to smooth the data
+roll_period = None          # '2h', if not None, apply a rolling median over the time given to smooth the results
 diff_order = 2              # to compute dN/dt (see _diff function in the class)
 
     # Plot settings -----------------------------
@@ -84,7 +84,7 @@ def set_bin_all(all_bins, stop_bin = dia_max, dia_min = dia_min, group_big:bool 
 
 bin_all = set_bin_all(bins_all, stop_bin=11.55, dia_min=dia_min, group_big=True)
 
-bin_ranges = [(.75,  1.54), (2.05,  2.74), (3.16, 7.5), (8.66,  31.62)]   # for grouped subplots
+bin_ranges = [(1.54,  2.05), (2.37,  3.65), (4.22, 7.5), (8.66,  31.62)]   # for grouped subplots
 # ---------------------------------------------------------------------------
 
 # ---- Define events ----------------------------------------
@@ -123,10 +123,7 @@ def build_results_df(data_dic, level_names=('member', 'bin')):
 def all_res(start, end, result_dir, data_dic = data_dict, df_events = df_events, study_poll = study_poll):
     """Compute and save plots all results according to the settings (work with global variables)"""
     print(f"\n Analysis from {start} to {end}")
-    # ---- clean result folder --------------------
-    if os.path.exists(result_dir):
-        shutil.rmtree(result_dir)
-    os.makedirs(result_dir)
+    
 
     # ---- load data --------------------------------------------------
     smps_10min_win = data_dic['smps'].loc[start:end]
@@ -156,6 +153,11 @@ def all_res(start, end, result_dir, data_dic = data_dict, df_events = df_events,
                 low_dia=dia_min, high_dia=dia_max, temperature=temperature, pressure=pressure,
                 diff_order=diff_order, smooth_window=roll_period)
     print("\t Results computed. Saving the plots...")
+
+    # ---- clean result folder --------------------
+    if os.path.exists(result_dir):
+        shutil.rmtree(result_dir)
+    os.makedirs(result_dir)
 
     res_w.plot_events(s='pos', bin_ranges= [[dia_min,dia_max]], study_poll=True, commony=sharey, T_roll='24h')
     plt.savefig(os.path.join(result_dir, "all_pos-ion-conc_events.png"), dpi=qual, bbox_inches='tight')
@@ -307,6 +309,68 @@ def plot_global(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] =
     bin_min, bin_max = bin_range
     
     fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6), sharex=True)
+    for rad, res_dict in zip(radiation, res_dicts):
+        marker = 'v' if rad else 'o'
+        for name, event_res in res_dict.items():
+            Q_pos = event_res.Q_snow_pos.loc[:, bin_min:bin_max].sum(axis=1).dropna()
+            Q_pos_int = time_average(Q_pos)
+            Q_neg = event_res.Q_snow_neg.loc[:, bin_min:bin_max].sum(axis=1).dropna()
+            Q_neg_int = time_average(Q_neg)
+            
+            x_data = event_res.met_df[key].median()
+            wind_median = event_res.met_df['true_wind_velocity'].median()   # for glob_df
+            temp_median = event_res.met_df['air_temperature'].median()
+
+            theresnpf = event_res.theresnpf
+            color = event_res.coldict['npf'] if theresnpf else event_res.coldict['events']
+            label = 'NPF event' if theresnpf else 'BSE'
+            ax2.scatter(x_data, Q_pos_int, color = color, marker = marker, alpha = 0.6, label = label)
+            ax1.scatter(x_data, Q_neg_int, color = color, marker = marker, alpha = 0.6, label = label)
+
+            start = event_res.pos_ion_psd.index.min()
+            end = event_res.pos_ion_psd.index.max()
+
+            newrow = pd.DataFrame([{'start'         : start,
+                                    'end'           : end,
+                                    'Q_pos_mean'    : Q_pos_int,
+                                    'Q_neg_mean'	: Q_neg_int,
+                                    'median_wind'   : wind_median,
+                                    'median_temp'	: temp_median,
+                                    'Event Type'	: label}])
+            glob_df = pd.concat([glob_df, newrow], ignore_index=True)
+
+    legend_elements = [
+        # season
+        ax1.scatter([], [], marker='v', color='k', label='Summer'),
+        ax1.scatter([], [], marker='o', color='k', label='Winter'),
+        # event type
+        ax1.scatter([], [], marker='s', color=res_dict_w[next(iter(res_dict_w))].coldict['npf'], label='NPF event'),
+        ax1.scatter([], [], marker='s', color=res_dict_w[next(iter(res_dict_w))].coldict['events'], label='BSE'),
+    ]
+
+    fig.legend(handles=legend_elements, loc='upper center', ncol=2) #, bbox_to_anchor=(0.5, -0.05)
+    ax1.set_title("Negative Ions")
+    ax2.set_title("Positive Ions")
+    ax1.set_ylabel("Mean Production rate ($cm^{-1}\\,s^{-1}$)")
+    ax1.set_xlabel(xlabel)
+    ax2.set_xlabel(xlabel)
+    # fig.suptitle(f"'Mean' production rate per event ({bin_min} to {bin_max} nm)")
+
+    return glob_df
+
+def plot_global_2(res_dicts:tuple, radiation:tuple, xval:Literal['wind', 'temp'] = 'wind', bin_range=(dia_min, dia_max)):
+
+    glob_df = pd.DataFrame(columns=['start', 'end', 'Q_pos_mean', 'Q_neg_mean', 'median_wind', 'median_temp', 'Event Type'])
+    if xval == 'wind':
+        key = 'true_wind_velocity'
+        xlabel = 'Wind speed ($m\\cdot s^{-1}$)'
+    elif xval == 'temp':
+        key = 'air_temperature'
+        xlabel = 'Temperature (°C)'
+    else: raise ValueError("xval must be 'wind' or 'temp'")
+    bin_min, bin_max = bin_range
+    
+    fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,6), sharex=True)
     size_list = []
     for rad, res_dict in zip(radiation, res_dicts):
         marker = 'v' if rad else 'o'
@@ -397,7 +461,8 @@ print(f"Mean ratio pos/neg: \n \t nuc mode : {nuc_rat_pos_neg_mean})",
         f"\n \t aitken mode : {ait_rat_pos_neg_mean})")
 
 
-print(df_nucmode)
+# Spearman test on conc series with wind and temperature:
+
 # bse_df_nucmode = df_nucmode.loc[df_nucmode['Event Type'] == 'BSE']
 # bse_df_aitken = df_aitken.loc[df_aitken['Event Type'] == 'BSE']
 
@@ -415,13 +480,6 @@ print(df_nucmode)
 # print(f"Wind vs production rate: rho = {rho_wind_aitken:.2f}, p = {p_wind_aitken:.3f}")
 # print(f"Temp vs production rate: rho = {rho_temp_aitken:.2f}, p = {p_temp_aitken:.3f}")
 
-
-# rat_nuc_ait_pos = df_nucmode['Q_pos_mean'] / df_aitken['Q_pos_mean']
-# rat_nuc_ait_pos_mean = rat_nuc_ait_pos.mean()
-# rat_nuc_ait_neg = df_nucmode['Q_neg_mean'] / df_aitken['Q_neg_mean']
-# rat_nuc_ait_neg_mean = rat_nuc_ait_neg.mean()
-
-# print(f"Ratio nucmode/aitken:\n \t Pos: {rat_nuc_ait_pos} \n \t Neg: {rat_nuc_ait_neg}")
 
 
 df_tot.to_csv(os.path.join(result_dir, "events_summary_all_size.csv"))
